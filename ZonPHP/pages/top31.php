@@ -97,16 +97,16 @@ $types = ['M', 'MMM', 'MMMM'];
                     var selectedItem2 = $('#tea').val();
                     if (Object.keys(selectedItem).length >0)
                 {
-                var allselected = selectedItem.toString();
+                allselected = selectedItem.toString();
                     }
                 if (Object.keys(selectedItem2).length >0)
                 {
-                var allselectedtea = selectedItem2.toString();
+                allselectedtea = selectedItem2.toString();
                 }
                    var def = $.ajax({
                 type: 'POST',
                 url: '../charts/top31_chart.php',
-                data: {'allselected': allselected, 'allselectedtea': allselectedtea, 'sort': window.sort },
+                data: {'allselected': window.allselected, 'allselectedtea': window.allselectedtea, 'sort': window.sort },
                 success: function(data) {
                    $('#top31_chart').html(data);
                         }
