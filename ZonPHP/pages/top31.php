@@ -13,7 +13,8 @@ include_once "../charts/top31_chart.php";
 $padding = '- 0px';
 $corners = 'border-bottom-left-radius: 0px !important; border-bottom-right-radius: 0px;';
 $month_local = [];
-$sort = ['ASC', 'DESC'];
+//$sort = ['ASC', 'DESC'];
+//$sort = 'desc';
 $types = ['M', 'MMM', 'MMMM'];
   foreach ($types as $tk => $tv) {
     $df = new IntlDateFormatter($locale, IntlDateFormatter::NONE, IntlDateFormatter::NONE, NULL, NULL, $tv);
@@ -44,7 +45,7 @@ $types = ['M', 'MMM', 'MMMM'];
                         <?php } ?>
                         </select>
                     </div>
-                    <div class="inner" id="Years" style="z-index: 999 !important; position:relative">
+                    <div class="inner" id="Years" style="z-index: 999 !important; position:relative; font-size: 13px !important;">
                     <select id="tea" name="roles" class="selectpicker show-tick"
                         title="<?= getTxt("jaar") ?>"
                         multiple="multiple"
@@ -70,10 +71,9 @@ $types = ['M', 'MMM', 'MMMM'];
                 });
                 </script>
                 <script>
-                function toggleText(newSort) {
+                sort = "Desc";
+                function toggleText() {
                       var x = document.getElementById("toggle");
-                    var allselected;
-                    var allselectedtea;
                       if (x.innerHTML === "<?= getTxt("desc"); ?>") {
                     x.innerHTML = "<?= getTxt("asc"); ?>";
                       sort = "Asc";
@@ -81,21 +81,20 @@ $types = ['M', 'MMM', 'MMMM'];
                     x.innerHTML = "<?= getTxt("desc"); ?>";
                       sort = "Desc";
                       }
-                    $.ajax({
-                    type: 'POST',
-                    url: '../charts/top31_chart.php',
-                    data: {'sort': sort },
-                    success: function(data) {
-                       $('#top31_chart').html(data);
+                var abc = $.ajax({
+                type: 'POST',
+                url: '../charts/top31_chart.php',
+                data: {'sort': sort, 'allselected': window.allselected, 'allselectedtea': window.allselectedtea },
+                success: function(data) {
+                   $('#top31_chart').html(data);
                         }
-                      });
+                      })
                 }
                 $.fn.selectpicker.Constructor.BootstrapVersion = '5';
                 $('.selectpicker').selectpicker({iconBase: 'fa', tickIcon: 'fa-check',style: 'btn btn-zonphp'});
                   $('.selectpicker').change(function () {
                 var selectedItem = $('#coffee').val();
                     var selectedItem2 = $('#tea').val();
-                    var sort = $('#sort').val();
                     if (Object.keys(selectedItem).length >0)
                 {
                 var allselected = selectedItem.toString();
@@ -104,20 +103,20 @@ $types = ['M', 'MMM', 'MMMM'];
                 {
                 var allselectedtea = selectedItem2.toString();
                 }
-                   
-                   $.ajax({
+                   var def = $.ajax({
                 type: 'POST',
                 url: '../charts/top31_chart.php',
-                data: {'allselected': allselected, 'allselectedtea': allselectedtea },
+                data: {'allselected': allselected, 'allselectedtea': allselectedtea, 'sort': window.sort },
                 success: function(data) {
                    $('#top31_chart').html(data);
                         }
-                      });
-                   });
+                      })
+                   })
                 </script>
         </div><!--.chart_header-->
         <div id="top31_chart"
              style="width:100%; background-color: <?= $colors['color_chartbackground'] ?>;height:100%; <?= $corners; ?>">
+        <?php var_dump($_POST) ?>
         </div>
         <div>
         <?php
