@@ -28,6 +28,7 @@ $_SESSION['CHARTDATE'] = $chartdate;
 <script src="https://jqwidgets.com/public/jqwidgets/jqxpanel.js"></script>
 <script src="https://jqwidgets.com/public/jqwidgets/jqxchart.js"></script>
 <script src="https://jqwidgets.com/public/jqwidgets/jqxgauge.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <div id="page-content">
     <script>

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<body>
+
+<canvas id="myChart" width="800" height="400"></canvas>
+
+<script>
+    var ctx = document.getElementById('myChart').getContext("2d")
+
+    const defaultLegendClickHandler = Chart.defaults.plugins.legend.onClick;
+
+    const newLegendClickHandler = function (e, legendItem, legend) {
+        let chart = legend.chart;
+        defaultLegendClickHandler(e, legendItem, legend);
+        let avgSum = [0, 0, 0, 0, 0, 0, 0];
+        let data = chart.data;
+
+        for (i in data.datasets) {
+            let meta = chart.getDatasetMeta(i);
+            let dataset = chart.data.datasets[i];
+            let isHidden = meta.hidden === null ? false : meta.hidden;
+            if (dataset.isAverageLine && !isHidden) {
+                for (ii in dataset.data) {
+                    avgSum[ii] = avgSum[ii] + dataset.data[ii];
+                }
+            }
+        }
+
+        data.datasets[3].data = avgSum;
+        chart.update();
+    };
+
+
+    var myChart = new Chart(ctx, {
+        data: {
+            labels: ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL"],
+            datasets: [
+                {
+                    label: "Bar",
+                    type: 'bar',
+                    fill: true,
+                    borderWidth: 1,
+                    data: [100, 120, 150, 170, 180, 170, 160],
+                    yAxisID: 'y',
+                    stack: 'BAR',
+                    isAverageLine: false,
+                },
+                {
+                    label: "Line1",
+                    type: 'line',
+                    fill: false,
+                    borderColor: "blue",
+                    borderWidth: 2,
+                    pointStyle: false,
+                    data: [410, 410, 410, 410, 410, 430, 410],
+                    yAxisID: 'y1',
+                    display: false,
+                    showLine: false,
+                    isAverageLine: true,
+                },
+                {
+                    label: "Line2",
+                    type: 'line',
+                    fill: false,
+                    borderColor: "green",
+                    borderWidth: 2,
+                    pointStyle: false,
+                    data: [470, 510, 510, 520, 500, 480, 470],
+                    yAxisID: 'y1',
+                    showLine: false,
+                    isAverageLine: true,
+                },
+                {
+                    label: "LineAVG",
+                    type: 'line',
+                    fill: false,
+                    borderColor: "red",
+                    borderWidth: 2,
+                    pointStyle: false,
+                    data: [{ x: 1, y: 10.11}, { x: 6, y: 33.03},],
+                    yAxisID: 'y1',
+                    showLine: true,
+                    isAverageLine: false,
+                },
+            ]
+        },
+        options: {
+            scales: {
+                x: {
+                    stacked: true,
+                },
+                y: {
+                    stacked: true
+                },
+                y1: {
+                    type: 'linear',
+                    min: 0,
+                    display: true,
+                    position: 'right',
+                    stacked: false,
+                    // grid line settings
+                    grid: {
+                        drawOnChartArea: false, // only want the grid lines for one axis to show up
+                    },
+                },
+            },
+            plugins: {
+                legend: {
+                    display: true,
+                    labels: {
+                        color: 'rgb(255, 99, 132)',
+                        filter: item => !item.text.includes('Line')
+                    },
+                    onClick: newLegendClickHandler
+                }
+            }
+
+        }
+    });
+</script>
+
+</body>
+</html>

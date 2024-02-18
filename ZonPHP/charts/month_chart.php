@@ -25,7 +25,7 @@ $current_year_month = date('Y-m', $chartdate);
 $nfrefmaand = array();
 foreach (PLANT_NAMES as $plant) {
     $tmp = $params[$plant]['expectedYield'][$current_month - 1] / 30;
-    $nfrefmaand[] = $tmp;
+    $nfrefmaand[$plant] = $tmp;
 }
 
 $DaysPerMonth = cal_days_in_month(CAL_GREGORIAN, $current_month, $current_year);
@@ -81,7 +81,21 @@ if (mysqli_num_rows($result) == 0) {
     $fgemiddelde = array_sum($agegevens) / $daycount;
     $iyasaanpassen = round(0.5 + max($agegevens) / 5) * 5;
 }
+//  new average
+$sqlavg = "SELECT Naam, MONTH( Datum_Maand ) AS Maand, ROUND( SUM( Geg_Maand ) / COUNT( DISTINCT (
+YEAR( Datum_Maand ) ) ) , 0
+) AS AVG
+FROM " . TABLE_PREFIX . "_maand
+WHERE MONTH( Datum_Maand ) = " . $current_month . "
+GROUP BY Naam, MONTH( Datum_Maand ) 
+ORDER BY naam ASC ";
+$result = mysqli_query($con, $sqlavg) or die("Query failed (gemiddelde) " . mysqli_error($con));
+while ($row = mysqli_fetch_array($result)) {
+    $avg_data[$row['Naam']] = $row['AVG'];
+}
+
 ?>
+
 <?php
 // -----------------------------  build data for chart -----------------------------------------------------------------
 // build colors per inverter array
@@ -93,36 +107,47 @@ $strdataseries = "";
 $maxval_yaxis = 0;
 $myColor1 = "'#FFAABB'";
 $myColor2 = "'#FFAABB'";
-foreach (PLANT_NAMES as $inverter_name) {
+$labels = "";
 
+$totalsumCumArray = array();
+for ($i = 1; $i <= $DaysPerMonth; $i++) {
+    $labels .= '"' . $i . '",';
+    $totalsumCumArray[$i] = 0.0;
+}
+$cnt = 0;
+$cumData = "";
+$sumAverage = 0.0;
+$sumExpected = 0.0;
+
+foreach (PLANT_NAMES as $inverter_name) {
+    $cnt++;
     $strdata = "";
     $local_max = 0;
+    $cumSum = 0;
+    $inverterAverage = $avg_data[$inverter_name] / $DaysPerMonth;
+    $inverterExpected = $nfrefmaand[$inverter_name];
+    // sum average for all inverter
+    $sumAverage += $inverterAverage;
+    $sumExpected += $inverterExpected;
+
+    $myColor1 = $myColors[$inverter_name]['min'];
+    $myColor2 = $myColors[$inverter_name]['max'];
+    $myMaxColor1 = "'" . $colors['color_chartbar_piek1'] . "'";
+    $myMaxColor2 = "'" . $colors['color_chartbar_piek2'] . "'";
+    $maxDay = 0;
     for ($i = 1; $i <= $DaysPerMonth; $i++) {
         $categories .= '"' . $i . '",';
         if (array_key_exists($i, $agegevens)) {
-            $myColor1 = $myColors[$inverter_name]['min'];
-            $myColor2 = $myColors[$inverter_name]['max'];
             if ($agegevens[$i] == max($agegevens)) {
-                $myColor1 = "'" . $colors['color_chartbar_piek1'] . "'";
-                $myColor2 = "'" . $colors['color_chartbar_piek2'] . "'";
+                $maxDay = $i;
             }
             $var = round($all_valarray[$i][$inverter_name], 2);
             if ($var > $local_max) $local_max = $var;
             $formattedHref = sprintf("%s%04d-%02d-%02d", $myurl, $current_year, $current_month, $i);
-            $strdata .= "
-                    {
-                      y: $var, 
-                      url: \"$formattedHref\",
-                      color: {
-                        linearGradient: { x1: 0, x2: 0, y1: 1, y2: 0 },
-                        stops: [
-                            [0, $myColor1],
-                            [1, $myColor2]
-                        ]}                                                       
-                    },";
-        } else {
-            $myColor1 = "'#FFAABB'";
-            $myColor2 = "'#FFAABB'";
+            $strdata .= " { x: $i, y: $var, url: \"$formattedHref\"},";
+            $cumSum += $var;
+            $cumData .= " { x: $i, y: $cumSum},";
+            $totalsumCumArray[$i] = $totalsumCumArray[$i] + $cumSum;
         }
     }
 
@@ -130,269 +155,238 @@ foreach (PLANT_NAMES as $inverter_name) {
     $local_max = 0;
     $strdata = substr($strdata, 0, -1);
     $strdataseries .= " {
-                    name: '" . $inverter_name . "',
-                    color: { linearGradient: {x1: 0, x2: 0, y1: 1, y2: 0}, stops: [ [0, $myColor1], [1, $myColor2]] },
-                    type: 'column',
-                    stacking: 'normal',
-                    data: [" . $strdata . "]
+                    datasetId: '" . $inverter_name . "', 
+                    label: '" . $inverter_name . "', 
+                    type: 'bar',                               
+                    stack: 'Stack 0',
+                    borderWidth: 1,
+                    data: [" . $strdata . "],                    
+                    dataCUM: [" . $cumData . "],
+                    averageValue: " . $inverterAverage . ",
+                    expectedValue: " . $nfrefmaand[$inverter_name] . ",
+                    maxDay: ".$maxDay.",
+                    fill: true,
+                    backgroundColor: function(context) {                         
+                       var gradientFill = ctx.createLinearGradient(0, 0, 0, 500);                                   
+                       if (context.index == context.dataset.maxDay-1) {
+                          gradientFill.addColorStop(0, " . $myMaxColor1 . ");
+                          gradientFill.addColorStop(1, " . $myMaxColor2 . ");
+                       } else {
+                          gradientFill.addColorStop(0, " . $myColor1 . ");
+                          gradientFill.addColorStop(1, " . $myColor2 . ");
+                       }
+                       return gradientFill;
+                    },
+                    yAxisID: 'y',
+                    isData: true,
                 },
     ";
+    $cumData = "";
 }
 $categories = substr($categories, 0, -1);
+// sum of all avr
+$strSumAverageData = "";
+$strSumExpectedData = "";
+$strSumCumulativeData = "";
+for ($i = 1; $i <= $DaysPerMonth; $i++) {
+    $strSumAverageData .= " " . $sumAverage . ", ";
+    $strSumExpectedData .= " " . $sumExpected . ", ";
+    $strSumCumulativeData .= " " . $totalsumCumArray[$i] . ", ";
+}
+$strdataseries .= " {
+                    datasetId: 'avg', 
+                    label: '" . getTxt("gem") . "', 
+                    type: 'line',      
+                    stack: 'Stack 1',                                                                 
+                    data: [" . $strSumAverageData . "],
+                    fill: false,
+                    borderColor: '" . $colors['color_chart_average_line'] . "',
+                    borderWidth: 1,
+                    pointStyle: false,   
+                    yAxisID: 'y',
+                    fill: false,   
+                    showLine: true,
+                    isData: false,               
+                },
+    ";
 
+$strdataseries .= " {
+                    datasetId: 'expected', 
+                    label: '" . getTxt("ref") . "', 
+                    type: 'line',      
+                    stack: 'Stack 2',                                                                 
+                    data: [" . $strSumExpectedData . "],
+                    fill: false,
+                    borderColor: '" . $colors['color_chart_reference_line'] . "',
+                    borderWidth: 1,
+                    pointStyle: false,   
+                    yAxisID: 'y',
+                    fill: false,   
+                    showLine: true,
+                    isData: false,               
+                },
+    ";
+
+$strdataseries .= " {
+                    datasetId: 'cum', 
+                    label: '" . getTxt("cum") . "', 
+                    type: 'line',      
+                    stack: 'Stack 1',                                                                 
+                    data: [" . $strSumCumulativeData . "],
+                    fill: true,                    
+                    backgroundColor: '" . $colors['color_chart_cum_fill'] . "',                
+                    borderWidth: 1,
+                    pointStyle: false,   
+                    yAxisID: 'y1',                       
+                    showLine: false,
+                    isData: false,               
+                },
+    ";
 
 $show_legende = "true";
 if ($isIndexPage) {
-    echo '<div class = "index_chart" id="month_chart"></div>';
+    echo '<div class = "index_chart" id="month_chart" style="background-color: ' . $colors['color_chartbackground'] . '">
+        <canvas id="month_chart_canvas"></canvas>
+          </div>';
     $show_legende = "false";
 }
 $monthTotal = round($monthTotal, 2);
-include_once "chart_styles.php";
+
+$subtitle = getTxt("totaal") . ": $monthTotal kWh";
+
+
 ?>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 
     $(function () {
 
-        function add(accumulator, a) {
-            return accumulator + a;
-        }
+            const ctx = document.getElementById('month_chart_canvas').getContext("2d");
 
-        var month = '<?php $formatter->setPattern('MMMM'); echo substr(datefmt_format($formatter, $chartdate), 0, 3); ?>';
-        var daycount = <?= $DaysPerMonth ?>;
-        var daycount2 = <?= $daycount ?>;
-        var nref = <?= json_encode($nfrefmaand, JSON_NUMERIC_CHECK) ?>;
-        var myoptions = <?= $chart_options ?>;
-        var khhWp = <?= json_encode($params['PLANTS_KWP']) ?>;
-        var nmbr = khhWp.length //misused to get the inverter count
-        var txt_max = '<?= getTxt("max") ?>';
-        var txt_gem = '<?= getTxt("gem") ?>';
-        var txt_ref = '<?= getTxt("ref") ?>';
-        var gem2;
-        var totamth = 0;
-        var mychart = new Highcharts.Chart('month_chart', Highcharts.merge(myoptions, {
+            function findDatasetById(datasets, name) {
+                for (i in datasets) {
+                    let label = datasets[i].datasetId;
+                    if (name === label) {
+                        return i;
+                    }
+                }
+                return -1; // not found
+            }
 
-            chart: {
-                events: {
-                    render() {
-                        mychart = this;
-                        series = this.series;
-                        gem = 0;
-                        // construct subtitle
-                        sum = [];
-                        kWh = [];
-                        peak = [];
-                        max = [];
-                        refref = [];
-                        current = 0;
-                        totamth = 0;
-                        for (i = nmbr - 1; i >= 0; i--) {
-                            if (series[i].visible) {
-                                kWh[i] = khhWp[i]; //KWH
-                                sum = series[i].data.length;
-                                peak[i] = series[i].dataMax; //PEAK
-                                refref[i] = nref[i];
-                                for (j = 0; j < series[i].data.length; j++) {
-                                    totamth += (series[i].data[j].y);//Total
-                                    gem = totamth / daycount2;
+            const defaultLegendClickHandler = Chart.defaults.plugins.legend.onClick;
+            const newLegendClickHandler = function (e, legendItem, legend) {
+                let chart = legend.chart;
+                defaultLegendClickHandler(e, legendItem, legend);
+                let avgSum = [];
+                let expectedSum = [];
+                let cumSum = [];
+                let data = chart.data;
 
-                                }
+                for (i in data.datasets) {
+                    let meta = chart.getDatasetMeta(i);
+                    let dataset = chart.data.datasets[i];
+                    let isHidden = meta.hidden === null ? false : meta.hidden;
+                    if (dataset.isData && !isHidden) {
+                        // avg
+                        for (ii in dataset.data) {
+                            if (avgSum[ii] == null) avgSum[ii] = 0;
+                            avgSum[ii] = avgSum[ii] + dataset.averageValue;
+                        }
+                        // expected
+                        for (ii in dataset.data) {
+                            if (expectedSum[ii] == null) expectedSum[ii] = 0;
+                            expectedSum[ii] = expectedSum[ii] + dataset.expectedValue;
+                        }
+                        // cum
+                        for (ii in dataset.data) {
+                            if (cumSum[ii] == null) cumSum[ii] = 0;
+                            cumSum[ii] = cumSum[ii] + dataset.dataCUM[ii].y;
+                        }
+                    }
+                    let avgIDX = findDatasetById(data.datasets, "avg");
+                    if (avgIDX > 0) {
+                        data.datasets[avgIDX].data = avgSum;
+                    }
+                    let expectedIDX = findDatasetById(data.datasets, "expected");
+                    if (expectedIDX > 0) {
+                        data.datasets[expectedIDX].data = expectedSum;
+                    }
+                    let cumIDX = findDatasetById(data.datasets, "cum");
+                    if (cumIDX > 0) {
+                        data.datasets[cumIDX].data = cumSum;
+                    }
+                    chart.update();
+                }
+            };
+
+            const plugin = {
+                id: 'customCanvasBackgroundColor',
+                beforeDraw: (chart, args, options) => {
+                    const {ctx} = chart;
+                    ctx.save();
+                    ctx.globalCompositeOperation = 'destination-over';
+                    ctx.fillStyle = options.color || '#99ffff';
+                    ctx.fillRect(0, 0, chart.width, chart.height);
+                    ctx.restore();
+                }
+            };
+            Chart.defaults.color = '<?= $colors['color_chart_text_title'] ?>';
+            new Chart(ctx, {
+                data: {
+                    labels: [<?= $labels ?>],
+                    datasets: [<?= $strdataseries  ?>]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            stacked: true,
+                        },
+                        y: {
+                            stacked: true
+                        },
+                        y1: {
+                            type: 'linear',
+                            min: 0,
+                            display: true,
+                            position: 'right',
+                            // grid line settings
+                            grid: {
+                                drawOnChartArea: false, // only want the grid lines for one axis to show up
+                            },
+                            stacked: true,
+                        },
+                    },
+                    plugins: {
+                        customCanvasBackgroundColor: {
+                            color: '<?= $colors['color_chartbackground'] ?>',
+                        },
+                        legend: {
+                            display: <?= $show_legende ?>,
+                            position: 'bottom',
+                            labels: {
+                                filter: item => !item.text.includes('line')
+                            },
+                            onClick: newLegendClickHandler
+                        },
+                        subtitle: {
+                            display: true,
+                            text: '<?= $subtitle ?>',
+                        },
+                    },
+                    onClick: (event, elements, chart) => {
+                        if (elements[0]) {
+                            const i = elements[0].index;
+                            const url = chart.data.datasets[0].data[i].url;
+                            if (url.length > 0) {
+                                location.href = url;
                             }
                         }
-                        gem2 = gem
-                        TOT = totamth;
-                        KWH = kWh.reduce(add, 0);
-                        MAX = max.reduce(add, 0);
-                        REF = refref.reduce(add, 0);
-                        percent = 100 * TOT / (REF * daycount)
-                        var AX = peak.filter(Boolean);
-                        if (AX.length == 0) {
-                            PEAK = 0;
-                        } else {
-                            PEAK = AX[0];
-                        }
-
-
-                        this.setSubtitle({
-                            text: "<b>" + month + ": </b>" + (Highcharts.numberFormat(totamth, 2, ",", "")) + " kWh = " + (Highcharts.numberFormat((totamth / KWH) * 1000, 2, ",", "")) + " kWh/kWp = " + (Highcharts.numberFormat(percent, 0, ",", "")) + "% <br/><b>" +
-                                txt_max + ": </b>" + (Highcharts.numberFormat(PEAK, 2, ",", "")) + " kWh = " +
-                                (Highcharts.numberFormat((PEAK / KWH) * 1000, 2, ",", "")) + " kWh/kWp" + " <b>" +
-                                txt_gem + ": </b>" + (Highcharts.numberFormat(gem, 2, ",", "")) + " kWh" + " <b>" + txt_ref + ": </b>" + (Highcharts.numberFormat(REF, 2, ",", "")) + " kWh"
-                        }, false, false);
-                        this.setTitle({
-                            text: "<b>" + month + ": </b>" + (Highcharts.numberFormat(totamth, 2, ",", "")) + " kWh = " + (Highcharts.numberFormat((totamth / KWH) * 1000, 2, ",", "")) + " kWh/kWp"
-                        }, false, false);
-                        //average plotline
-                        mychart.yAxis[0].addPlotLine({
-                            id: 'Average',
-                            value: gem2,
-                            color: '<?= $colors['color_chart_average_line'] ?>',
-                            dashStyle: 'shortdash',
-                            events: {
-                                mouseover: function (e) {
-                                    var series = this.axis.series[0],
-                                        chart = series.chart,
-                                        PointClass = series.pointClass,
-                                        tooltip = chart.tooltip,
-                                        point = (new PointClass()).init(
-                                            series, ['Average', this.options.value]
-                                        ),
-                                        normalizedEvent = chart.pointer.normalize(e);
-                                    point.tooltipPos = [
-                                        normalizedEvent.chartX - chart.plotLeft,
-                                        normalizedEvent.chartY - chart.plotTop
-                                    ];
-                                    tooltip.refresh(point);
-                                },
-                                mouseout: function (e) {
-                                    this.axis.chart.tooltip.hide();
-                                }
-                            },
-                            width: 2,
-                        });
-                        //reference plotline
-                        mychart.yAxis[0].addPlotLine({
-                            id: 'Reference',
-                            value: REF,
-                            color: '<?= $colors['color_chart_reference_line'] ?>',
-                            dashStyle: 'shortdash',
-                            //tooltip reference line
-                            events: {
-                                mouseover: function (e) {
-                                    var series = this.axis.series[0],
-                                        chart = series.chart,
-                                        PointClass = series.pointClass,
-                                        tooltip = chart.tooltip,
-                                        point = (new PointClass()).init(
-                                            series, ['Reference', this.options.value]
-                                        ),
-                                        normalizedEvent = chart.pointer.normalize(e);
-                                    point.tooltipPos = [
-                                        normalizedEvent.chartX - chart.plotLeft,
-                                        normalizedEvent.chartY - chart.plotTop
-                                    ];
-                                    tooltip.refresh(point);
-                                },
-                                mouseout: function (e) {
-                                    this.axis.chart.tooltip.hide();
-                                }
-                            },
-                            width: 2,
-                        });
-                    },
-
-                }
-
-            },
-            plotOptions: {
-                series: {
-                    states: {
-                        hover: {
-                            enabled: false,
-                            lineWidth: 0,
-                        },
-                        inactive: {
-                            opacity: 1
-                        }
-                    },
-                },
-                column: {
-                    events: {
-                        legendItemClick: function () {
-                            mychart.yAxis[0].removePlotLine('Average');
-                            mychart.yAxis[0].removePlotLine('Reference');
-
-                        }
-                    },
-                    showInLegend: true
-                }
-            },
-            title: {
-                style: {
-                    wordWrap: 'break-word',
-                    fontWeight: 'normal',
-                    fontSize: '12px',
-                    color: '<?= $colors['color_chart_text_subtitle'] ?>'
-                }
-            },
-
-            subtitle: {
-                style: {
-                    color: '<?= $colors['color_chart_text_subtitle'] ?>',
-                },
-            },
-
-            xAxis: [{
-                labels: {
-                    rotation: 270,
-                    step: 1,
-                    style: {
-                        color: '<?= $colors['color_chart_labels_xaxis1'] ?>',
-                    },
-                },
-                categories: [<?= $categories ?>],
-            }],
-            yAxis: [{ // Primary yAxis
-                labels: {
-                    formatter: function () {
-                        return this.value
-                    },
-                    style: {
-                        color: '<?= $colors['color_chart_labels_yaxis1'] ?>',
-                    },
-                },
-                opposite: true,
-                title: {
-                    text: 'Total (kWh)',
-                    style: {
-                        color: '<?= $colors['color_chart_title_yaxis1'] ?>'
-                    },
-                },
-                gridLineColor: '<?= $colors['color_chart_gridline_yaxis1'] ?>',
-                max: <?= $maxval_yaxis ?>,
-            }],
-            tooltip: {
-
-                formatter: function () {
-                    if ((typeof (this.x) == 'undefined') && this.y == REF) {
-                        return mychart.yAxis[0].plotLinesAndBands[1].id + ' ' + this.y.toFixed(2) + ' kWh';
                     }
-                    if ((typeof (this.x) == 'undefined') && this.y == gem2) {
-                        return mychart.yAxis[0].plotLinesAndBands[0].id + ' ' + this.y.toFixed(2) + ' kWh';
-                    } else {
-                        var chart = this.series.chart,
-                            x = this.x,
-
-                            stackName = this.series.userOptions.stack,
-                            contribuants = '';
-                        //console.log(x);
-
-                        chart.series.forEach(function (series) {
-                            series.points.forEach(function (point) {
-                                if (point.category === x && stackName === point.series.userOptions.stack) {
-                                    contribuants += point.series.name + ': ' + point.y + ' kWh<br/>'
-                                }
-                            })
-                        })
-                        if (stackName === undefined) {
-                            stackName = '';
-                        }
-                        return '<b>' + x + ' ' + stackName + '<br/>' + '<br/>' + contribuants + 'Total: ' + this.point.stackTotal + ' kWh';
-                        /* return this.x + ': ' + Highcharts.numberFormat(this.y, '2', ',') +  ' kWh'; */
-                    }
-                }
-            },
-
-            series: [
-                <?= $strdataseries ?>
-
-            ],
-
-        }));
-
-        setInterval(function () {
-            $("#month_chart").highcharts().reflow();
-        }, 500);
-
-
-    });
+                },
+                plugins: [plugin],
+            });
+        }
+    )
+    ;
 </script>

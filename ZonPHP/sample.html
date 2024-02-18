@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<body>
+
+<canvas id="myChart" style="width:100%;max-width:600px"></canvas>
+
+<script>
+    var xValues = ["1", "2", "3", "4", "5"];
+    var y1Values = [55, 49, 44, 24, 15];
+    var y2Values = [22, 54, 44, 12, 35];
+    var barColors = ["red", "green", "blue", "orange", "brown"];
+
+    new Chart("myChart", {
+        type: "bar",
+        backgroundColor: "#000000",
+        data: {
+            labels: ["a1", "a2", "a3", "4", "5"],
+            datasets: [{
+                label: "Seehase1",
+                data:
+                    [
+                        {x: 1, y: 13},
+                        {x: 2, y: 1},
+                        {x: 3, y: 5},
+                        {x: 4, y: 3},
+                        {x: 5, y: 4}
+                    ],
+                stack: 'Stack 0',
+                borderWidth: 1
+            },
+                {
+                    label: "Tilly",
+                    data:
+                        [
+                            {x: 1, y: 13},
+                            {x: 2, y: 1},
+                            {x: 3, y: 5},
+                            {x: 4, y: 3},
+                            {x: 5, y: 4}
+                        ],
+                    stack: 'Stack 0',
+                    borderWidth: 1
+                }]
+        },
+        options: {
+            legend: {display: true},
+            responsive: true,
+            title: {
+                display: true,
+                text: "World Wine Production 2018"
+            },
+            scales: {
+                x: {
+                    stacked: true,
+                },
+                y: {
+                    stacked: true
+                }
+            }
+        }
+    });
+</script>
+
+</body>
+</html>
