@@ -102,7 +102,6 @@ while ($row = mysqli_fetch_array($result)) {
 $myColors = colorsPerInverter();
 // collect data array
 $myurl = HTML_PATH . "pages/day_overview.php?date=";
-$categories = "";
 $strdataseries = "";
 $maxval_yaxis = 0;
 $myColor1 = "'#FFAABB'";
@@ -134,12 +133,11 @@ foreach (PLANT_NAMES as $inverter_name) {
     $myColor2 = $myColors[$inverter_name]['max'];
     $myMaxColor1 = "'" . $colors['color_chartbar_piek1'] . "'";
     $myMaxColor2 = "'" . $colors['color_chartbar_piek2'] . "'";
-    $maxDay = 0;
+    $maxIndex = 0;
     for ($i = 1; $i <= $DaysPerMonth; $i++) {
-        $categories .= '"' . $i . '",';
         if (array_key_exists($i, $agegevens)) {
             if ($agegevens[$i] == max($agegevens)) {
-                $maxDay = $i;
+                $maxIndex = $i;
             }
             $var = round($all_valarray[$i][$inverter_name], 2);
             if ($var > $local_max) $local_max = $var;
@@ -164,11 +162,11 @@ foreach (PLANT_NAMES as $inverter_name) {
                     dataCUM: [" . $cumData . "],
                     averageValue: " . $inverterAverage . ",
                     expectedValue: " . $nfrefmaand[$inverter_name] . ",
-                    maxDay: ".$maxDay.",
+                    maxIndex: " . $maxIndex . ",
                     fill: true,
                     backgroundColor: function(context) {                         
                        var gradientFill = ctx.createLinearGradient(0, 0, 0, 500);                                   
-                       if (context.index == context.dataset.maxDay-1) {
+                       if (context.index == context.dataset.maxIndex-1) {
                           gradientFill.addColorStop(0, " . $myMaxColor1 . ");
                           gradientFill.addColorStop(1, " . $myMaxColor2 . ");
                        } else {
@@ -183,7 +181,7 @@ foreach (PLANT_NAMES as $inverter_name) {
     ";
     $cumData = "";
 }
-$categories = substr($categories, 0, -1);
+
 // sum of all avr
 $strSumAverageData = "";
 $strSumExpectedData = "";
@@ -246,7 +244,7 @@ $strdataseries .= " {
 $show_legende = "true";
 if ($isIndexPage) {
     echo '<div class = "index_chart" id="month_chart" style="background-color: ' . $colors['color_chartbackground'] . '">
-        <canvas id="month_chart_canvas"></canvas>
+              <canvas id="month_chart_canvas"></canvas>
           </div>';
     $show_legende = "false";
 }
@@ -257,79 +255,13 @@ $subtitle = getTxt("totaal") . ": $monthTotal kWh";
 
 ?>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="<?= HTML_PATH ?>inc/js/chart_support.js"></script>
 <script>
 
     $(function () {
 
             const ctx = document.getElementById('month_chart_canvas').getContext("2d");
 
-            function findDatasetById(datasets, name) {
-                for (i in datasets) {
-                    let label = datasets[i].datasetId;
-                    if (name === label) {
-                        return i;
-                    }
-                }
-                return -1; // not found
-            }
-
-            const defaultLegendClickHandler = Chart.defaults.plugins.legend.onClick;
-            const newLegendClickHandler = function (e, legendItem, legend) {
-                let chart = legend.chart;
-                defaultLegendClickHandler(e, legendItem, legend);
-                let avgSum = [];
-                let expectedSum = [];
-                let cumSum = [];
-                let data = chart.data;
-
-                for (i in data.datasets) {
-                    let meta = chart.getDatasetMeta(i);
-                    let dataset = chart.data.datasets[i];
-                    let isHidden = meta.hidden === null ? false : meta.hidden;
-                    if (dataset.isData && !isHidden) {
-                        // avg
-                        for (ii in dataset.data) {
-                            if (avgSum[ii] == null) avgSum[ii] = 0;
-                            avgSum[ii] = avgSum[ii] + dataset.averageValue;
-                        }
-                        // expected
-                        for (ii in dataset.data) {
-                            if (expectedSum[ii] == null) expectedSum[ii] = 0;
-                            expectedSum[ii] = expectedSum[ii] + dataset.expectedValue;
-                        }
-                        // cum
-                        for (ii in dataset.data) {
-                            if (cumSum[ii] == null) cumSum[ii] = 0;
-                            cumSum[ii] = cumSum[ii] + dataset.dataCUM[ii].y;
-                        }
-                    }
-                    let avgIDX = findDatasetById(data.datasets, "avg");
-                    if (avgIDX > 0) {
-                        data.datasets[avgIDX].data = avgSum;
-                    }
-                    let expectedIDX = findDatasetById(data.datasets, "expected");
-                    if (expectedIDX > 0) {
-                        data.datasets[expectedIDX].data = expectedSum;
-                    }
-                    let cumIDX = findDatasetById(data.datasets, "cum");
-                    if (cumIDX > 0) {
-                        data.datasets[cumIDX].data = cumSum;
-                    }
-                    chart.update();
-                }
-            };
-
-            const plugin = {
-                id: 'customCanvasBackgroundColor',
-                beforeDraw: (chart, args, options) => {
-                    const {ctx} = chart;
-                    ctx.save();
-                    ctx.globalCompositeOperation = 'destination-over';
-                    ctx.fillStyle = options.color || '#99ffff';
-                    ctx.fillRect(0, 0, chart.width, chart.height);
-                    ctx.restore();
-                }
-            };
             Chart.defaults.color = '<?= $colors['color_chart_text_title'] ?>';
             new Chart(ctx, {
                 data: {
@@ -388,5 +320,5 @@ $subtitle = getTxt("totaal") . ": $monthTotal kWh";
             });
         }
     )
-    ;
+
 </script>

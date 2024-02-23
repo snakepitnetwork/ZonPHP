@@ -24,8 +24,8 @@ $myKeys = array_keys($sum_per_year);
         <div id="chart_header" class="<?= HEADER_CLASS ?>">
             <h2><?= getTxt("chart_allyearoverview") . "&nbsp;" . min($myKeys) . " - " . max($myKeys); ?></h2>
         </div>
-        <div id="total_chart"
-             style="width:100%;background-color: <?= $colors['color_chartbackground'] ?>;height:100%; <?= $corners; ?>">
+        <div id="total_chart"  style="width:100%;background-color: <?= $colors['color_chartbackground'] ?>;height:100%; <?= $corners; ?>">
+            <canvas id="total_chart_canvas"></canvas>
         </div>
         <?php include_once ROOT_DIR . "/inc/footer.php"; ?>
     </div>

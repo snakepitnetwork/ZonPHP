@@ -46,6 +46,7 @@ function vadidateParams(&$params): void
     $totalExpectedMonth = array();
     $totalcapacity = 0;
     foreach ($plantNames as $plantName) {
+
         vadidatePlant($plantName, $params[$plantName]);
         $params['farm']['plants'][$plantName] = $params[$plantName];
         $params['PLANTS'][$plantName] = $params[$plantName];
@@ -62,6 +63,8 @@ function vadidateParams(&$params): void
         $params[$plantName]['totalExpectedYield'] = $totalSum;
         $totalExpectedYield += $totalSum;
         $expectedYield[] = $totalSum;
+        $params['PLANTS'][$plantName]['totalExpectedYield'] = $totalSum;
+        $params[$plantName]['totalExpectedYield'] = $totalSum;
     }
     $params['totalExpectedMonth'] = $totalExpectedMonth;
     $params['totalExpectedYield'] = $totalExpectedYield;
