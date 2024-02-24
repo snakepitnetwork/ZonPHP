@@ -2,6 +2,7 @@
 global $con, $colors, $params, $chart_options;
 include_once "../inc/init.php";
 include_once ROOT_DIR . "/inc/connect.php";
+include_once "chart_support.php";
 
 $isIndexPage = false;
 $showAllInverters = true;
@@ -102,7 +103,7 @@ foreach ($inveter_list as $inverter_name) {
         }
         // normal chart, $val throws errors when missing inverter index
         @$val = round($fkw[$inverter_name], 2);
-        $formattedHref = sprintf("%s%04d-%02d-%02d", $myurl, 1, 1, $ijaar);
+        $formattedHref = sprintf("%s%02d-%02d-%04d", $myurl, 1, 1, $ijaar);
         $strdata .= " { x: $ijaar, y: $val, url: \"$formattedHref\"},";
         $cumSum += $val;
         $cumData .= " { x: $ijaar, y: $cumSum},";
@@ -139,21 +140,14 @@ foreach ($inveter_list as $inverter_name) {
     ";
     $cumData = "";
 }
-// sum of all avr
-$strSumAverageData = "";
-$strSumExpectedData = "";
-$strSumCumulativeData = "";
-foreach ($sum_per_year as $year => $fkw) {
-    $strSumAverageData .= " " . $sumAverage . ", ";
-    $strSumExpectedData .= " " . $sumExpected . ", ";
-    $strSumCumulativeData .= " " . $totalsumCumArray[$year] . ", ";
-}
+
+// average
 $strdataseries .= " {
                     datasetId: 'avg', 
                     label: '" . getTxt("gem") . "', 
                     type: 'line',      
                     stack: 'Stack 1',                                                                 
-                    data: [" . $strSumAverageData . "],
+                    data: [" . buildConstantDataString($sumAverage, count($sum_per_year)) . "],
                     fill: false,
                     borderColor: '" . $colors['color_chart_average_line'] . "',
                     borderWidth: 1,
@@ -165,12 +159,13 @@ $strdataseries .= " {
                 },
     ";
 
+// expected
 $strdataseries .= " {
                     datasetId: 'expected', 
                     label: '" . getTxt("ref") . "', 
                     type: 'line',      
                     stack: 'Stack 2',                                                                 
-                    data: [" . $strSumExpectedData . "],
+                    data: [" . buildConstantDataString($sumExpected, count($sum_per_year)) . "],
                     fill: false,
                     borderColor: '" . $colors['color_chart_reference_line'] . "',
                     borderWidth: 1,
@@ -182,12 +177,13 @@ $strdataseries .= " {
                 },
     ";
 
+//cumulative
 $strdataseries .= " {
                     datasetId: 'cum', 
                     label: '" . getTxt("cum") . "', 
                     type: 'line',      
                     stack: 'Stack 1',                                                                 
-                    data: [" . $strSumCumulativeData . "],
+                    data: [" . convertValueArrayToDataString($totalsumCumArray) . "],
                     fill: true,                    
                     backgroundColor: '" . $colors['color_chart_cum_fill'] . "',                
                     borderWidth: 1,

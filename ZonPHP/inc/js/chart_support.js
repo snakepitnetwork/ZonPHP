@@ -27,6 +27,8 @@ const newLegendClickHandler = function (e, legendItem, legend) {
     let avgSum = [];
     let expectedSum = [];
     let cumSum = [];
+    let maxSum = [];
+    let refSum = [];
     let data = chart.data;
 
     for (i in data.datasets) {
@@ -44,10 +46,20 @@ const newLegendClickHandler = function (e, legendItem, legend) {
                 if (expectedSum[ii] == null) expectedSum[ii] = 0;
                 expectedSum[ii] = expectedSum[ii] + dataset.expectedValue;
             }
+            // max
+            for (ii in dataset.data) {
+                if (maxSum[ii] == null) maxSum[ii] = 0;
+                maxSum[ii] = maxSum[ii] + dataset.dataMAX[ii].y;
+            }
             // cum
             for (ii in dataset.data) {
                 if (cumSum[ii] == null) cumSum[ii] = 0;
                 cumSum[ii] = cumSum[ii] + dataset.dataCUM[ii].y;
+            }
+            // ref per month
+            for (ii in dataset.data) {
+                if (refSum[ii] == null) refSum[ii] = 0;
+                refSum[ii] = refSum[ii] + dataset.dataREF[ii].y;
             }
         }
         let avgIDX = findDatasetById(data.datasets, "avg");
@@ -61,6 +73,14 @@ const newLegendClickHandler = function (e, legendItem, legend) {
         let cumIDX = findDatasetById(data.datasets, "cum");
         if (cumIDX > 0) {
             data.datasets[cumIDX].data = cumSum;
+        }
+        let maxIDX = findDatasetById(data.datasets, "max");
+        if (maxIDX > 0) {
+            data.datasets[maxIDX].data = maxSum;
+        }
+        let refIDX = findDatasetById(data.datasets, "ref");
+        if (refIDX > 0) {
+            data.datasets[refIDX].data = refSum;
         }
         chart.update();
     }

@@ -54,7 +54,7 @@ $corners = 'border-bottom-left-radius: 0px !important; border-bottom-right-radiu
                 </button>
                 <?= $datum ?>
                 <button class="btn btn-zonphp"
-                        onclick="window.location.href='?date=' <?= date('Y-m-d', strtotime("+1 year", $chartdate)) ?>'"
+                        onclick="window.location.href='?date=<?= date('Y-m-d', strtotime("+1 year", $chartdate)) ?>'"
                     <?php if ($_SESSION['date_maximum'] <= $chartdate) echo " hidden"; ?> >
                     <i class="fa fa-angle-right fa-lg"></i>
                 </button>
@@ -75,6 +75,7 @@ $corners = 'border-bottom-left-radius: 0px !important; border-bottom-right-radiu
         </div>
         <div id="year_chart" class="demo"
              style="width:100%; background-color: <?= $colors['color_chartbackground'] ?>;height:100%; <?= $corners; ?>">
+            <canvas id="year_chart_canvas"></canvas>
         </div>
         <?php include_once ROOT_DIR . "/inc/footer.php"; ?>
     </div>

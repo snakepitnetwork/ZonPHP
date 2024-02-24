@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<!--<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.4.0/Chart.min.js"></script> -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-annotation/3.0.1/chartjs-plugin-annotation.min.js"></script>
+<body>
+
+<canvas id="myChart" width="800" height="400"></canvas>
+
+<script>
+    var ctx = document.getElementById('myChart').getContext("2d")
+
+    var gradientFill = ctx.createLinearGradient(0, 0, 0, 500);
+    gradientFill.addColorStop(0, "rgba(128, 182, 244, 0.6)");
+    gradientFill.addColorStop(1, "rgba(244, 144, 128, 0.6)");
+
+    const options = {
+        plugins: {
+            annotation: {
+                annotations: {
+                    line1: {
+                        type: 'line',
+                        yMin: 60,
+                        yMax: 60,
+                        borderColor: 'rgb(255, 99, 132)',
+                        borderWidth: 2,
+                    }
+                }
+            }
+        }
+    };
+
+    var myChart = new Chart(ctx, {
+
+            data: {
+                labels: ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL"],
+                datasets: [{
+                    label: "Bar",
+                    type: 'bar',
+                    fill: true,
+                    backgroundColor: function () { // Callback instead of static color
+                        var gradientFill = ctx.createLinearGradient(0, 0, 0, 500);
+                        gradientFill.addColorStop(0, "rgba(128, 182, 244, 0.6)");
+                        gradientFill.addColorStop(1, "rgba(244, 144, 128, 0.6)");
+                        return gradientFill;
+                    },
+                    borderWidth: 1,
+                    data: [200, 220, 250, 270, 280, 270, 260],
+                    yAxisID: 'y',
+                    xAxisID: 'x',
+                }, {
+                    label: "Average",
+                    type: 'line',
+                    fill: false,
+                    borderColor: "red",
+                    borderWidth: 2,
+                    pointStyle: false,
+                    data: [{"x": 1, "y": 246}, {"x": 2, "y": 416}, {"x": 3, "y": 727}, {"x": 4, "y": 844},
+                        {"x": 5, "y": 815}, {"x": 6, "y": 841}, {"x": 7, "y": 874}],
+                    yAxisID: 'y1',
+                    xAxisID: 'x',
+                }, {
+                    label: "Line1",
+                    type: 'line',
+                    borderColor: "blue",
+                    pointStyle: 'line',
+                    borderWidth: 5,
+                    rotation: 0,
+                    radius: 30,
+                    hoverRadius: 30,
+                    data: [{"x": 1, "y": 190}, {"x": 2, "y": NaN}, {"x": 3, "y": NaN},
+                        {"x": 4, "y": NaN}, {"x": 5, "y": NaN}, {"x": 6, "y": NaN}],
+                    yAxisID: 'y',
+                    xAxisID: 'x1',
+                }, {
+                    label: "Line2",
+                    type: 'line',
+                    radius: 30,
+                    hoverRadius: 30,
+                    pointStyle: 'triangle',
+                    stepped: true,
+                    borderColor: "blue",
+                    data: [{"x": 1, "y": NaN}, {"x": 2, "y": 120}, {"x": 3, "y": NaN}, {"x": 4, "y": NaN},
+                        {"x": 5, "y": NaN}, {"x": 6, "y": NaN}],
+                    yAxisID: 'y',
+                    xAxisID: 'x1',
+                }, {
+                    label: "Line3",
+                    type: 'line',
+                    radius: 30,
+                    hoverRadius: 30,
+                    pointStyle: 'dash',
+                    borderWidth: 4,
+                    stepped: true,
+                    borderColor: "blue",
+                    data: [{"x": 1, "y": NaN}, {"x": 2, "y": NaN}, {"x": 3, "y": 140}, {"x": 4, "y": NaN},
+                        {"x": 5, "y": NaN}, {"x": 6, "y": NaN}],
+                    yAxisID: 'y',
+                    xAxisID: 'x1',
+                }
+
+                ]
+            },
+            options: {
+
+                legend: {
+                    position: "bottom"
+                },
+                scales: {
+                    y: {
+                        ticks: {
+                            fontColor: "rgb(246,246,2)",
+                            fontStyle: "bold",
+                            beginAtZero: true,
+                            maxTicksLimit: 5,
+                            padding: 20
+                        },
+                        gridLines: {
+                            drawTicks: false,
+                            display: false
+                        },
+                    },
+                    x: {
+                        gridLines: {
+                            zeroLineColor: "transparent"
+                        },
+                        ticks: {
+                            padding: 20,
+                            fontColor: "rgba(0,0,0,0.5)",
+                            fontStyle: "bold"
+                        },
+                    },
+                    x1: {
+                        gridLines: false,
+                        offset: false,
+                        beginAtZero: false,
+                        display: true
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: false,
+                        position: 'right',
+                        // grid line settings
+                        grid: {
+                            drawOnChartArea: false, // only want the grid lines for one axis to show up
+                        },
+                    },
+                },
+                plugins: {
+                    subtitle: {
+                        display: true,
+                        text: 'Horizontal Lines with annotation plugin',
+                    },
+                    annotation: {
+                        annotations: {
+                            line1: {
+                                type: 'line',
+                                yMin: 60,
+                                yMax: 60,
+                                xMin: 1,
+                                xMax: 2,
+                                xScaleID: 'x1',
+                                borderColor: 'rgb(255, 99, 132)',
+                                borderWidth: 2,
+                            }
+                        }
+
+                    },
+                }
+            }
+        })
+    ;
+</script>
+
+</body>
+</html>

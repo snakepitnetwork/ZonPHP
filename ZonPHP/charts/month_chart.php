@@ -2,6 +2,7 @@
 global $con, $params, $formatter, $colors, $chart_options;
 include_once "../inc/init.php";
 include_once ROOT_DIR . "/inc/connect.php";
+include_once "chart_support.php";
 
 if (isset($_GET['date'])) {
     $chartdatestring = html_entity_decode($_GET['date']);
@@ -139,11 +140,11 @@ foreach (PLANT_NAMES as $inverter_name) {
             if ($agegevens[$i] == max($agegevens)) {
                 $maxIndex = $i;
             }
-            $var = round($all_valarray[$i][$inverter_name], 2);
-            if ($var > $local_max) $local_max = $var;
+            $val = round($all_valarray[$i][$inverter_name], 2);
+            if ($val > $local_max) $local_max = $val;
             $formattedHref = sprintf("%s%04d-%02d-%02d", $myurl, $current_year, $current_month, $i);
-            $strdata .= " { x: $i, y: $var, url: \"$formattedHref\"},";
-            $cumSum += $var;
+            $strdata .= " { x: $i, y: $val, url: \"$formattedHref\"},";
+            $cumSum += $val;
             $cumData .= " { x: $i, y: $cumSum},";
             $totalsumCumArray[$i] = $totalsumCumArray[$i] + $cumSum;
         }
@@ -176,66 +177,64 @@ foreach (PLANT_NAMES as $inverter_name) {
                        return gradientFill;
                     },
                     yAxisID: 'y',
+                    xAxisID: 'x',
                     isData: true,
                 },
     ";
     $cumData = "";
 }
 
-// sum of all avr
-$strSumAverageData = "";
-$strSumExpectedData = "";
-$strSumCumulativeData = "";
-for ($i = 1; $i <= $DaysPerMonth; $i++) {
-    $strSumAverageData .= " " . $sumAverage . ", ";
-    $strSumExpectedData .= " " . $sumExpected . ", ";
-    $strSumCumulativeData .= " " . $totalsumCumArray[$i] . ", ";
-}
+// average
 $strdataseries .= " {
                     datasetId: 'avg', 
                     label: '" . getTxt("gem") . "', 
                     type: 'line',      
                     stack: 'Stack 1',                                                                 
-                    data: [" . $strSumAverageData . "],
+                    data: [" . buildConstantDataString($sumAverage, $DaysPerMonth) . "],
                     fill: false,
                     borderColor: '" . $colors['color_chart_average_line'] . "',
                     borderWidth: 1,
                     pointStyle: false,   
                     yAxisID: 'y',
+                    xAxisID: 'x1',
                     fill: false,   
                     showLine: true,
                     isData: false,               
                 },
     ";
 
+// expected
 $strdataseries .= " {
                     datasetId: 'expected', 
                     label: '" . getTxt("ref") . "', 
                     type: 'line',      
                     stack: 'Stack 2',                                                                 
-                    data: [" . $strSumExpectedData . "],
+                    data: [" . buildConstantDataString($sumExpected, $DaysPerMonth) . "],
                     fill: false,
                     borderColor: '" . $colors['color_chart_reference_line'] . "',
                     borderWidth: 1,
                     pointStyle: false,   
                     yAxisID: 'y',
+                    xAxisID: 'x1',
                     fill: false,   
                     showLine: true,
                     isData: false,               
                 },
     ";
 
+// cumulative
 $strdataseries .= " {
                     datasetId: 'cum', 
                     label: '" . getTxt("cum") . "', 
                     type: 'line',      
                     stack: 'Stack 1',                                                                 
-                    data: [" . $strSumCumulativeData . "],
+                    data: [" . convertValueArrayToDataString($totalsumCumArray) . "],
                     fill: true,                    
                     backgroundColor: '" . $colors['color_chart_cum_fill'] . "',                
                     borderWidth: 1,
                     pointStyle: false,   
-                    yAxisID: 'y1',                       
+                    yAxisID: 'y1',      
+                    xAxisID: 'x1',                 
                     showLine: false,
                     isData: false,               
                 },
@@ -276,6 +275,10 @@ $subtitle = getTxt("totaal") . ": $monthTotal kWh";
                         },
                         y: {
                             stacked: true
+                        },
+                        x1: {
+                            offset: false,
+                            display: false,
                         },
                         y1: {
                             type: 'linear',
