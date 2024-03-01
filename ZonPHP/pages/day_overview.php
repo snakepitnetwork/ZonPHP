@@ -64,6 +64,7 @@ $corners = 'border-bottom-left-radius: 0px !important; border-bottom-right-radiu
         </div>
         <div id="mycontainer" class="demo"
              style="width:100%; background-color: <?= $colors['color_chartbackground'] ?>;height:100%; <?= $corners; ?>">
+            <canvas id="day_chart_canvas"></canvas>
         </div>
         <?php include_once ROOT_DIR . "/inc/footer.php"; ?>
     </div>

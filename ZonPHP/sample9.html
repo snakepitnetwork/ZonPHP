@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<body>
+
+<canvas id="myChart" width="800" height="400"></canvas>
+
+<script>
+    var ctx = document.getElementById('myChart').getContext("2d")
+    const config = {
+        type: "line",
+        data: {
+            datasets: [{
+                label: "20070480",
+                borderColor: "#36A2EB",
+                backgroundColor: "#9BD0F5",
+                data: [
+                    [1681792679186, 1096],
+                    [1681792680186, 1147],
+                    [1681792681187, 1056],
+                    [1681792682187, 1100],
+                    [1681792683188, 1104],
+                    [1681792684188, 1158],
+                ]
+            }]
+        },
+
+        options: {
+            animation: false,
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: "Time (UTC)",
+                        font: {
+                            size: 10,
+                        }
+                    },
+                    type: "time",
+                    ticks: {
+                        font: {
+                            size:  10,
+                            weight: "bold"
+                        },
+                        minRotation: 45,
+                        count: 3,
+                        //  stepSize: 15000,
+                        // autoSkip: false
+                    },
+
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: "Count Rate",
+                        font: {
+                            size: 10,
+                            weight: "bold"
+                        }
+                    },
+                    ticks: {
+                        font: {
+                            size: 10
+                        }
+                    }
+                }
+            }
+        }
+    };
+
+    new Chart(document.querySelector('#myChart'), config);
+
+ /*   var myChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [
+                {
+                    label: "TimeLine",
+                    data: [
+                        [1681792679186, 1096],
+                        [1681792680186, 1147],
+                        [1681792681187, 1056],
+                        [1681792682187, 1100],
+                        [1681792683188, 1104],
+                        [1681792684188, 1158],
+                    ],
+                    borderColor: "#3e95cd",
+                    fill: false
+                },
+            ]
+        },
+        options: {
+            scales: {
+                x: {
+
+                },
+                y: {
+
+                },
+
+            },
+            plugins: {
+
+                subtitle: {
+                    display: true,
+                    text: 'Timeseries line',
+                },
+            }
+
+        }
+    });
+
+  */
+</script>
+
+</body>
+</html>

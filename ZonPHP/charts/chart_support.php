@@ -23,6 +23,14 @@ function convertValueArrayToDataString($array): string
     }
     return strip($out);
 }
+function convertKeyValueArrayToDataString($array): string
+{
+    $out = "";
+    foreach ($array as $key => $value) {
+        $out .= "{x: $key, y: $value },";
+    }
+    return strip($out);
+}
 
 function buildConstantDataString($value, $count): string
 {

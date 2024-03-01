@@ -1,4 +1,3 @@
-const defaultLegendClickHandler = Chart.defaults.plugins.legend.onClick;
 
 function findDatasetById(datasets, name) {
     for (i in datasets) {
@@ -8,6 +7,15 @@ function findDatasetById(datasets, name) {
         }
     }
     return -1; // not found
+}
+
+// copy array and set y-value to 0
+function cloneAndResetY(originalArray) {
+    var newArray = [];
+    for (let i in originalArray) {
+        newArray[i]= { x : originalArray[i].x, y:0};;
+    }
+    return newArray;
 }
 
 const plugin = {
@@ -23,19 +31,21 @@ const plugin = {
 };
 const newLegendClickHandler = function (e, legendItem, legend) {
     let chart = legend.chart;
-    defaultLegendClickHandler(e, legendItem, legend);
+    Chart.defaults.plugins.legend.onClick(e, legendItem, legend);
+    let data = chart.data;
     let avgSum = [];
     let expectedSum = [];
-    let cumSum = [];
+    let cumSum = []
     let maxSum = [];
     let refSum = [];
-    let data = chart.data;
+
 
     for (i in data.datasets) {
         let meta = chart.getDatasetMeta(i);
         let dataset = chart.data.datasets[i];
         let isHidden = meta.hidden === null ? false : meta.hidden;
         if (dataset.isData && !isHidden) {
+            if (cumSum.length === 0 ) cumSum = cloneAndResetY(dataset.dataCUM)
             // avg
             for (ii in dataset.data) {
                 if (avgSum[ii] == null) avgSum[ii] = 0;
@@ -49,17 +59,23 @@ const newLegendClickHandler = function (e, legendItem, legend) {
             // max
             for (ii in dataset.data) {
                 if (maxSum[ii] == null) maxSum[ii] = 0;
-                maxSum[ii] = maxSum[ii] + dataset.dataMAX[ii].y;
+                if (dataset.dataMAX[ii] != null) {
+                    maxSum[ii] = maxSum[ii] + dataset.dataMAX[ii].y;
+                }
             }
             // cum
             for (ii in dataset.data) {
-                if (cumSum[ii] == null) cumSum[ii] = 0;
-                cumSum[ii] = cumSum[ii] + dataset.dataCUM[ii].y;
+                if (dataset.dataCUM[ii].y != null) {
+                    var x = dataset.dataCUM[ii]
+                    cumSum[ii].y = cumSum[ii].y + dataset.dataCUM[ii].y;
+                }
             }
             // ref per month
             for (ii in dataset.data) {
                 if (refSum[ii] == null) refSum[ii] = 0;
-                refSum[ii] = refSum[ii] + dataset.dataREF[ii].y;
+                if (dataset.dataREF[ii] != null) {
+                    refSum[ii] = refSum[ii] + dataset.dataREF[ii].y;
+                }
             }
         }
         let avgIDX = findDatasetById(data.datasets, "avg");

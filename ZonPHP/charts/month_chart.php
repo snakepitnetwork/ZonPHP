@@ -161,6 +161,8 @@ foreach (PLANT_NAMES as $inverter_name) {
                     borderWidth: 1,
                     data: [" . $strdata . "],                    
                     dataCUM: [" . $cumData . "],
+                    dataMAX: [], 
+                    dataREF: [],
                     averageValue: " . $inverterAverage . ",
                     expectedValue: " . $nfrefmaand[$inverter_name] . ",
                     maxIndex: " . $maxIndex . ",

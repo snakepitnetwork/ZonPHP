@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+
+
+<body>
+
+<canvas id="myChart" width="800" height="400"></canvas>
+
+<script>
+    var ctx = document.getElementById('myChart').getContext("2d")
+
+    var myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+
+                datasets: [
+                    {
+                        label: "TimeLine",
+                        data: [
+                            [1708844400000, 36],
+                            [1708844700000, 36],
+                            [1708845000000, 168],
+                            [1708845300000, 264],
+                            [1708845600000, 168],
+                            [1708845900000, 122],
+                        ],
+                        borderColor: "#3e95cd",
+                        fill: false
+                    },
+                ]
+            },
+            options: {
+                animation: false,
+                scales: {
+                    x: {
+                        type: 'timeseries',
+                        time: {
+                            unit: 'second',
+                            tooltipFormat: 'YYYY-MM-DD HH:mm',
+                            displayFormats: {
+                                second: 'HH:mm'
+                            }
+                        },
+                        ticks: {
+                            padding: 2,
+                            maxTicksLimit: 6,
+                            autoSkip: true,
+                            maxRotation: 0,
+                            minRotation: 0,
+                            labelOffset: 25,
+                        }
+                    },
+
+                },
+                y: {}
+            }
+        })
+    ;
+
+
+</script>
+
+</body>
+</html>

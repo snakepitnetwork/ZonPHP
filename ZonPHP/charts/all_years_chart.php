@@ -119,6 +119,8 @@ foreach ($inveter_list as $inverter_name) {
                     borderWidth: 1,
                     data: [" . $strdata . "],                    
                     dataCUM: [" . $cumData . "],
+                    dataMAX: [], 
+                    dataREF: [],
                     averageValue: " . $inverterAverage . ",
                     expectedValue: " . $inverterExpected . ",
                     maxIndex: " . $maxIndex . ",
