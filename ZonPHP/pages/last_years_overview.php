@@ -23,7 +23,6 @@ $corners = 'border-bottom-left-radius: 0px !important; border-bottom-right-radiu
             <?php include_once ROOT_DIR . "/inc/topmenu.php"; ?>
         </div>
 
-
         <div id="chart_header" class="<?= HEADER_CLASS ?>" style="display: grid; align-content: center; ">
             <h2>
                 <?php
@@ -33,8 +32,8 @@ $corners = 'border-bottom-left-radius: 0px !important; border-bottom-right-radiu
                 ?>
             </h2>
         </div>
-        <div id="all_years_chart_<?= $inverter ?>"
-             style="width:100%; background-color: <?= $colors['color_chartbackground'] ?>;height:100%; <?= $corners; ?>">
+        <div id="all_years_chart_<?= $inverter ?>" style="width:100%; background-color: <?= $colors['color_chartbackground'] ?>;height:100%; <?= $corners; ?>">
+            <canvas id="last_year_chart_canvas"></canvas>
         </div>
         <?php include_once ROOT_DIR . "/inc/footer.php"; ?>
     </div>

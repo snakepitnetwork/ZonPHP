@@ -333,7 +333,7 @@ $subtitle = getTxt("totaal") . ": $totalYear kWh";
                             labels: {
                                 filter: item => !item.text.includes('line')
                             },
-                            onClick: newLegendClickHandler
+                            onClick: getCustomLegendClickHandler()
                         },
                         subtitle: {
                             display: true,
@@ -350,7 +350,7 @@ $subtitle = getTxt("totaal") . ": $totalYear kWh";
                         }
                     }
                 },
-                plugins: [plugin],
+                plugins: [getPlugin()],
             });
         }
     )

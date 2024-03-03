@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .ul-class li {
+        list-style: none;
+    }
+    .ul-class li:after {
+        content: "\A";
+        white-space: pre;
+    }
+</style>
+<body>
+
+<canvas id="myChart" width="800" height="400"></canvas>
+
+<script>
+    var ctx = document.getElementById('myChart').getContext("2d")
+
+    var myChart = new Chart(ctx, {
+        data: {
+            labels: ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL"],
+            inverters: ["SEEHASE", "TILLY"],
+            datasets: [
+                {
+                    label: "Max",
+                    type: 'bar',
+                    fill: true,
+                    borderColor: "blue",
+                    borderWidth: 0,
+                    pointStyle: false,
+                    xAxisID: 'maxbar',
+                    data: [310, 310, 300, 380, 320, 370, 380],
+                },
+                {
+                    label: "2021",
+                    inverter: "SEEHASE",
+                    stack: 'Stack 1',
+                    type: 'bar',
+                    barPercentage: 0.5,
+                    fill: true,
+                    borderWidth: 1,
+                    backgroundColor: ['rgba(255, 26, 104, 0.2)'],
+                    borderColor: ['rgba(255, 26, 104, 1)'],
+                    data: [100, 120, 150, 170, 180, 170, 160],
+                },
+                {
+                    label: "2021",
+                    inverter: "TILLY",
+                    type: 'bar',
+                    stack: 'Stack 1',
+                    barPercentage: 0.5,
+                    fill: true,
+                    borderWidth: 1,
+                    backgroundColor: ['rgba(54, 162, 235, 0.2)'],
+                    borderColor: ['rgba(54, 162, 235, 1)'],
+                    data: [70, 90, 50, 70, 80, 70, 60],
+                },
+                {
+                    label: "2022",
+                    inverter: "SEEHASE",
+                    type: 'bar',
+                    stack: 'Stack 2',
+                    barPercentage: 0.5,
+                    fill: true,
+                    borderWidth: 1,
+                    backgroundColor: ['rgba(255, 26, 104, 0.2)'],
+                    borderColor: ['rgba(54, 162, 235, 1)'],
+                    data: [70, 90, 50, 70, 80, 70, 60],
+                },
+                {
+                    label: "2022",
+                    inverter: "TILLY",
+                    type: 'bar',
+                    stack: 'Stack 2',
+                    barPercentage: 0.5,
+                    fill: true,
+                    borderWidth: 1,
+                    backgroundColor: ['rgba(54, 162, 235, 0.2)'],
+                    borderColor: ['rgba(54, 162, 235, 1)'],
+                    data: [70, 90, 50, 70, 80, 70, 60],
+                },
+                {
+                    label: "2023",
+                    inverter: "SEEHASE",
+                    type: 'bar',
+                    stack: 'Stack 3',
+                    barPercentage: 0.5,
+                    fill: true,
+                    borderWidth: 1,
+                    backgroundColor: ['rgba(255, 26, 104, 0.2)'],
+                    borderColor: ['rgba(54, 162, 235, 1)'],
+                    data: [70, 90, 50, 70, 80, 70, 60],
+                },
+                {
+                    label: "2023",
+                    inverter: "TILLY",
+                    type: 'bar',
+                    stack: 'Stack 3',
+                    barPercentage: 0.5,
+                    fill: true,
+                    borderWidth: 1,
+                    backgroundColor: ['rgba(54, 162, 235, 0.2)'],
+                    borderColor: ['rgba(54, 162, 235, 1)'],
+                    data: [70, 90, 50, 70, 80, 70, 60],
+                },
+                {
+                    label: "Average",
+                    type: 'line',
+                    fill: false,
+                    borderColor: "red",
+                    borderWidth: 2,
+                    pointStyle: false,
+                    data: [{"x": 1, "y": 246}, {"x": 2, "y": 416}, {"x": 3, "y": 727}, {"x": 4, "y": 844},
+                        {"x": 5, "y": 815}, {"x": 6, "y": 841}, {"x": 7, "y": 874}],
+                    yAxisID: 'y1',
+                    xAxisID: 'x',
+                },
+                {
+                    label: "Line4",
+                    type: 'line',
+                    radius:50,
+                    hoverRadius:30,
+                    pointStyle: 'triangle',
+                    borderWidth: 4,
+                    showLine: true,
+                    stepped: true,
+                    borderColor: "green",
+                    data: [{"x": 1, "y": 90}, {"x": 2, "y": 60}, {"x": 3, "y": 80}, {"x": 4, "y": 30},
+                        {"x": 5, "y": NaN}, {"x": 6, "y": 45}],
+                    yAxisID: 'y',
+                    xAxisID: 'x1',
+                }
+            ]
+        },
+        options: {
+            scales: {
+                x: {
+                    stack: true,
+                    display: true,
+                },
+                x1: {
+                    gridLines: false,
+                    offset: true,
+                    beginAtZero: false,
+                    display: true
+                },
+                y: {
+                    beginAtZero: true,
+                    stack: true,
+                },
+                maxbar: {
+                    offset: true,
+                    display: false,
+                },
+
+            },
+
+            plugins: {
+                subtitle: {
+                    display: true,
+                    text: 'Custom Legend',
+                },
+                labels: {
+                    filter: item => !item.text.includes('line'),
+                },
+
+                legend: {
+                    display: false,
+                    position: 'bottom',
+                    labels: {
+                        filter: item => !item.text.includes('l_ine'),
+
+                    },
+                },
+            },
+
+        },
+    });
+
+    const config = {
+        type: 'line',
+        data: data,
+        options: {
+            plugins: {
+                htmlLegend: {
+                    // ID of the container to put the legend in
+                    containerID: 'legend-container',
+                },
+                legend: {
+                    display: false,
+                }
+            }
+        },
+        plugins: [htmlLegendPlugin],
+    };
+</script>
+
+</body>
+</html>

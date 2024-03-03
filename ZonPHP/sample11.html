@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<body>
+
+<canvas id="myChart" width="800" height="400"></canvas>
+
+<script>
+    var ctx = document.getElementById('myChart').getContext("2d")
+    var myChart = new Chart(ctx, {
+        data: {
+            labels: ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL"],
+            datasets: [
+                {
+                    label: "Max",
+                    type: 'bar',
+                    fill: true,
+                    borderColor: "blue",
+                    borderWidth: 0,
+                    pointStyle: false,
+                    xAxisID: 'maxbar',
+                    data: [310, 310, 300, 380, 320, 370, 380],
+                },
+                {
+                    label: "Inverter1",
+                    stack: 'Stack 1',
+                    type: 'bar',
+                    barPercentage: 0.5,
+                    fill: true,
+                    borderWidth: 1,
+                    backgroundColor: ['rgba(255, 26, 104, 0.2)'],
+                    borderColor: ['rgba(255, 26, 104, 1)'],
+                    data: [100, 120, 150, 170, 180, 170, 160],
+                },
+                {
+                    label: "Inverter2",
+                    type: 'bar',
+                    stack: 'Stack 1',
+                    barPercentage: 0.5,
+                    fill: true,
+                    borderWidth: 1,
+                    backgroundColor: ['rgba(54, 162, 235, 0.2)'],
+                    borderColor: ['rgba(54, 162, 235, 1)'],
+                    data: [70, 90, 50, 70, 80, 70, 60],
+                },
+                {
+                    label: "Inverter1-2",
+                    type: 'bar',
+                    stack: 'Stack 2',
+                    barPercentage: 0.5,
+                    fill: true,
+                    borderWidth: 1,
+                    backgroundColor: ['rgba(255, 26, 104, 0.2)'],
+                    borderColor: ['rgba(54, 162, 235, 1)'],
+                    data: [70, 90, 50, 70, 80, 70, 60],
+                },
+                {
+                    label: "Inverter2-2",
+                    type: 'bar',
+                    stack: 'Stack 2',
+                    barPercentage: 0.5,
+                    fill: true,
+                    borderWidth: 1,
+                    backgroundColor: ['rgba(54, 162, 235, 0.2)'],
+                    borderColor: ['rgba(54, 162, 235, 1)'],
+                    data: [70, 90, 50, 70, 80, 70, 60],
+                },
+                {
+                    label: "Inverter1-3",
+                    type: 'bar',
+                    stack: 'Stack 3',
+                    barPercentage: 0.5,
+                    fill: true,
+                    borderWidth: 1,
+                    backgroundColor: ['rgba(255, 26, 104, 0.2)'],
+                    borderColor: ['rgba(54, 162, 235, 1)'],
+                    data: [70, 90, 50, 70, 80, 70, 60],
+                },
+                {
+                    label: "Inverter2-3",
+                    type: 'bar',
+                    stack: 'Stack 3',
+                    barPercentage: 0.5,
+                    fill: true,
+                    borderWidth: 1,
+                    backgroundColor: ['rgba(54, 162, 235, 0.2)'],
+                    borderColor: ['rgba(54, 162, 235, 1)'],
+                    data: [70, 90, 50, 70, 80, 70, 60],
+                },
+            ]
+        },
+        options: {
+            scales: {
+                x: {
+                    stack: true,
+                    display: true,
+                },
+                y: {
+                    beginAtZero: true,
+                    stack: true,
+                },
+                maxbar: {
+                    offset: true,
+                    display: false,
+                },
+
+            },
+            plugins: {
+                subtitle: {
+                    display: true,
+                    text: 'Stacked and overlapping multi bars',
+                },
+            }
+
+        }
+    });
+</script>
+
+</body>
+</html>

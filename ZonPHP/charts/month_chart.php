@@ -304,7 +304,7 @@ $subtitle = getTxt("totaal") . ": $monthTotal kWh";
                             labels: {
                                 filter: item => !item.text.includes('line')
                             },
-                            onClick: newLegendClickHandler
+                            onClick: getCustomLegendClickHandler()
                         },
                         subtitle: {
                             display: true,
@@ -321,7 +321,7 @@ $subtitle = getTxt("totaal") . ": $monthTotal kWh";
                         }
                     }
                 },
-                plugins: [plugin],
+                plugins: [getPlugin()],
             });
         }
     )

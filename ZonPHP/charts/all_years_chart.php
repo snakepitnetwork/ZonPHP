@@ -250,7 +250,7 @@ $subtitle = getTxt("totaal") . ": " . round($total_sum_for_all_years, 0) . " kWh
                             labels: {
                                 filter: item => !item.text.includes('line')
                             },
-                            onClick: newLegendClickHandler
+                            onClick: getCustomLegendClickHandler()
                         },
                         subtitle: {
                             display: true,
@@ -267,7 +267,7 @@ $subtitle = getTxt("totaal") . ": " . round($total_sum_for_all_years, 0) . " kWh
                         }
                     }
                 },
-                plugins: [plugin],
+                plugins: [getPlugin()],
             });
         }
     )

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .ul-class li {
+        list-style: none;
+    }
+    .ul-class li:after {
+        content: "\A";
+        white-space: pre;
+    }
+</style>
+<body>
+
+<canvas id="myChart" width="800" height="400"></canvas>
+<div id="legend-container">abc</div>
+<script>
+    var ctx = document.getElementById('myChart').getContext("2d")
+
+    const getOrCreateLegendList = (chart, id) => {
+        const legendContainer = document.getElementById(id);
+        let listContainer = legendContainer.querySelector('ul');
+
+        if (!listContainer) {
+            listContainer = document.createElement('ul');
+            listContainer.className = "ul-class"
+            listContainer.style.display = 'flex';
+            listContainer.style.flexDirection = 'row';
+            listContainer.style.margin = 0;
+            listContainer.style.padding = 0;
+
+            legendContainer.appendChild(listContainer);
+        }
+
+        return listContainer;
+    };
+
+    const htmlLegendPlugin = {
+        id: 'htmlLegend',
+        afterUpdate(chart, args, options) {
+            const ul = getOrCreateLegendList(chart, options.containerID);
+
+            // Remove old legend items
+            while (ul.firstChild) {
+                ul.firstChild.remove();
+            }
+
+            // Reuse the built-in legendItems generator
+            const items = chart.options.plugins.legend.labels.generateLabels(chart);
+
+            items.forEach(item => {
+                const li = document.createElement('li');
+
+                li.style.alignItems = 'center';
+                li.style.cursor = 'pointer';
+                li.style.display = 'flex';
+                li.style.flexDirection = 'row';
+                li.style.marginLeft = '10px';
+
+                li.onclick = () => {
+                    const {type} = chart.config;
+                    if (type === 'pie' || type === 'doughnut') {
+                        // Pie and doughnut charts only have a single dataset and visibility is per item
+                        chart.toggleDataVisibility(item.index);
+                    } else {
+                        chart.setDatasetVisibility(item.datasetIndex, !chart.isDatasetVisible(item.datasetIndex));
+                    }
+                    chart.update();
+                };
+
+                // Color box
+                const boxSpan = document.createElement('span');
+                boxSpan.style.background = item.fillStyle;
+                boxSpan.style.borderColor = item.strokeStyle;
+                boxSpan.style.borderWidth = item.lineWidth + 'px';
+                boxSpan.style.display = 'inline-block';
+                boxSpan.style.flexShrink = 0;
+                boxSpan.style.height = '20px';
+                boxSpan.style.marginRight = '10px';
+                boxSpan.style.width = '20px';
+
+                // Text
+                const textContainer = document.createElement('p');
+                textContainer.style.color = item.fontColor;
+                textContainer.style.margin = 0;
+                textContainer.style.padding = 0;
+                textContainer.style.textDecoration = item.hidden ? 'line-through' : '';
+
+                const text = document.createTextNode(item.text);
+                textContainer.appendChild(text);
+
+                li.appendChild(boxSpan);
+
+                li.appendChild(textContainer);
+                ul.appendChild(li);
+                li.appendChild(document.createElement('br'))
+            });
+        }
+    };
+
+    var myChart = new Chart(ctx, {
+        data: {
+            labels: ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL"],
+            inverters: ["SEEHASE", "TILLY"],
+            datasets: [
+                {
+                    label: "Max",
+                    type: 'bar',
+                    fill: true,
+                    borderColor: "blue",
+                    borderWidth: 0,
+                    pointStyle: false,
+                    xAxisID: 'maxbar',
+                    data: [310, 310, 300, 380, 320, 370, 380],
+                },
+                {
+                    label: "2021",
+                    inverter: "SEEHASE",
+                    stack: 'Stack 1',
+                    type: 'bar',
+                    barPercentage: 0.5,
+                    fill: true,
+                    borderWidth: 1,
+                    backgroundColor: ['rgba(255, 26, 104, 0.2)'],
+                    borderColor: ['rgba(255, 26, 104, 1)'],
+                    data: [100, 120, 150, 170, 180, 170, 160],
+                },
+                {
+                    label: "2021",
+                    inverter: "TILLY",
+                    type: 'bar',
+                    stack: 'Stack 1',
+                    barPercentage: 0.5,
+                    fill: true,
+                    borderWidth: 1,
+                    backgroundColor: ['rgba(54, 162, 235, 0.2)'],
+                    borderColor: ['rgba(54, 162, 235, 1)'],
+                    data: [70, 90, 50, 70, 80, 70, 60],
+                },
+                {
+                    label: "2022",
+                    inverter: "SEEHASE",
+                    type: 'bar',
+                    stack: 'Stack 2',
+                    barPercentage: 0.5,
+                    fill: true,
+                    borderWidth: 1,
+                    backgroundColor: ['rgba(255, 26, 104, 0.2)'],
+                    borderColor: ['rgba(54, 162, 235, 1)'],
+                    data: [70, 90, 50, 70, 80, 70, 60],
+                },
+                {
+                    label: "2022",
+                    inverter: "TILLY",
+                    type: 'bar',
+                    stack: 'Stack 2',
+                    barPercentage: 0.5,
+                    fill: true,
+                    borderWidth: 1,
+                    backgroundColor: ['rgba(54, 162, 235, 0.2)'],
+                    borderColor: ['rgba(54, 162, 235, 1)'],
+                    data: [70, 90, 50, 70, 80, 70, 60],
+                },
+                {
+                    label: "2023",
+                    inverter: "SEEHASE",
+                    type: 'bar',
+                    stack: 'Stack 3',
+                    barPercentage: 0.5,
+                    fill: true,
+                    borderWidth: 1,
+                    backgroundColor: ['rgba(255, 26, 104, 0.2)'],
+                    borderColor: ['rgba(54, 162, 235, 1)'],
+                    data: [70, 90, 50, 70, 80, 70, 60],
+                },
+                {
+                    label: "2023",
+                    inverter: "TILLY",
+                    type: 'bar',
+                    stack: 'Stack 3',
+                    barPercentage: 0.5,
+                    fill: true,
+                    borderWidth: 1,
+                    backgroundColor: ['rgba(54, 162, 235, 0.2)'],
+                    borderColor: ['rgba(54, 162, 235, 1)'],
+                    data: [70, 90, 50, 70, 80, 70, 60],
+                },
+            ]
+        },
+        options: {
+            scales: {
+                x: {
+                    stack: true,
+                    display: true,
+                },
+                y: {
+                    beginAtZero: true,
+                    stack: true,
+                },
+                maxbar: {
+                    offset: true,
+                    display: false,
+                },
+
+            },
+
+            plugins: {
+                subtitle: {
+                    display: true,
+                    text: 'Custom Legend',
+                },
+                labels: {
+                    filter: item => !item.text.includes('line'),
+                },
+                htmlLegend: {
+                    // ID of the container to put the legend in
+                    containerID: 'legend-container',
+                },
+
+                legend: {
+                    display: false,
+                    position: 'bottom',
+                    labels: {
+                        filter: item => !item.text.includes('line'),
+                        generateLabels: function (chart) {
+                            return [
+                                {datasetIndex: -1, text: "xxx1"},
+                                {datasetIndex: -1, text: "yyy"},
+                                {datasetIndex: -1, text: "zzz"}
+                            ]
+                        },
+                    },
+                },
+            },
+
+        },
+        plugins: [htmlLegendPlugin],
+    });
+
+    const config = {
+        type: 'line',
+        data: data,
+        options: {
+            plugins: {
+                htmlLegend: {
+                    // ID of the container to put the legend in
+                    containerID: 'legend-container',
+                },
+                legend: {
+                    display: false,
+                }
+            }
+        },
+        plugins: [htmlLegendPlugin],
+    };
+</script>
+
+</body>
+</html>
