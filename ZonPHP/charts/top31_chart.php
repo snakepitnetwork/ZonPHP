@@ -1,7 +1,8 @@
 <?php
-global $con, $colors, $params, $chart_options;
+global $con, $colors, $params, $chart_options, $locale;
 include_once "../inc/init.php";
 include_once ROOT_DIR . "/inc/connect.php";
+include_once "chart_support.php";
 
 $showTopFlop = "top31_chart";
 $isIndexPage = false;
@@ -9,41 +10,53 @@ $isIndexPage = false;
 if (isset($_POST['action']) && ($_POST['action'] == "indexpage")) {
     $isIndexPage = true;
 }
+$month_local = array();
+$types = ['MMM', 'MMMM'];
+foreach ($types as $tk => $tv) {
+    $df = new IntlDateFormatter($locale, IntlDateFormatter::NONE, IntlDateFormatter::NONE, NULL, NULL, $tv);
+    for ($i = 1; $i <= 12; $i++) {
+        $val = $df->format(mktime(0, 0, 0, $i));
+        $val = str_replace('.', '', $val);
+        $month_local[$i][$tv] = $val;
+    }
+}
 
 $sql2 = "SELECT distinct(YEAR(Datum_Maand))as years FROM " . TABLE_PREFIX . "_maand";
 $result = $con->query($sql2);
-while($row = $result->fetch_row()) {
-  $years[]=$row[0];
+while ($row = $result->fetch_row()) {
+    $years[] = $row[0];
 }
-$whereInYear=implode(',',$years);
-$x = "'" . implode("', '", PLANT_NAMES) . "'";
-$whereInClause = " where naam in ($x)";
+$whereInYear = implode(',', $years);
 $whereInMonth = '1,2,3,4,5,6,7,8,9,10,11,12';
 
-
-if (isset($_POST['allselected']) ) {
-$whereInMonth = $_POST['allselected'];
+if (isset($_GET['sort']) && $_GET['sort'] != "undefined") {
+    $sort = $_GET['sort'];
+} else {
+    $sort = 'desc';
 }
-if (isset($_POST['allselectedtea']) ) {
-$whereInYear = $_POST['allselectedtea'];
+$visibleInvertersJS = "";
+if (isset($_GET['inverters']) && $_GET['inverters'] != "undefined" && $_GET['inverters'] != "") {
+    $input = explode(',', $_GET['inverters']);
+    $visibleInverters = "'" . implode("', '", $input) . "'";
+    $visibleInvertersJS = implode(",", $input);
+} else {
+    $visibleInverters = "'" . implode("', '", PLANT_NAMES) . "'";
+    $visibleInvertersJS = implode(",", PLANT_NAMES);
+}
+$whereInClause = " where naam in ($visibleInverters)";
+
+
+if (isset($_GET['months']) && $_GET['months'] != "undefined" && $_GET['months'] != "") {
+    $selectedMonths = explode(',', $_GET['months']);
+} else {
+    $selectedMonths = array();
 }
 
-if (isset($_POST['sort']) ) {
-$sort = $_POST['sort'];
+if (isset($_GET['years']) && $_GET['years'] != "undefined" && $_GET['years'] != "") {
+    $selectedYears = explode(",", $_GET['years']);
+} else {
+    $selectedYears = array();;
 }
-else {$sort = 'desc';}
-
-if (isset($_POST['localmonth']) ) {
-$localmonth = $_POST['localmonth'];
-}
-else {$localmonth = ' ';}
-
-if (isset($_POST['localyear']) ) {
-$localyear = $_POST['localyear'];
-}
-else {$localyear = ' ';}
-
-
 
 
 $sql = "SELECT db1.*
@@ -65,191 +78,183 @@ if (mysqli_num_rows($result) > 0) {
 //clean-up category array
 $adatum = array_values(array_unique($adatum));
 ?>
+
 <?php
 // -----------------------------  build data for chart -----------------------------------------------------------------
-// build colors per inverter array
-//
 $myurl = HTML_PATH . "pages/day_overview.php?date=";
 $myMetadata = array();
 $myColors = colorsPerInverter();
-
-$dataseries = "";
+$plantNames = "";
+$strdataseries = "";
+$strdata = "";
 $maxval_yaxis = 0;
+$labels = convertValueArrayToDataString($adatum);
 
 foreach (PLANT_NAMES as $key => $inverter_name) {
-    $data = "";
+    $plantNames .= "'$inverter_name',";
+    $strdata = "";
     $local_max = 0;
     $myColor1 = $myColors[$inverter_name]['min'];
     $myColor2 = $myColors[$inverter_name]['max'];
-    $myMetadata[] = "{name: '$inverter_name', color: {linearGradient: { x1: 0, x2: 0, y1: 1, y2: 0 }, stops: [[0, $myColor1], [1, $myColor2]]}, stacking: 'normal', keys: ['name', 'y'], data: data[$key]}";
 
     for ($i = 0; $i <= 30; $i++) {
-        $var = 0.0;
+        $val = 0.0;
         if (isset($adatum[$i]) && isset($all_valarray[$adatum[$i]][$inverter_name])) {
-            $var = round($all_valarray[$adatum[$i]][$inverter_name], 2);
-            $data .= '[\'' . $adatum[$i] . '\', ' . $var . '],';
+            $val = round($all_valarray[$adatum[$i]][$inverter_name], 2);
         }
+        $formattedHref = sprintf("%s%s", $myurl, $adatum[$i],);
+        $strdata .= " { x: $adatum[$i], y: $val, url: '$formattedHref'},";
     }
-    $maxval_yaxis += $local_max;
-    $data = substr($data, 0, -1);
-    $dataseries .= '[' . $data . '],';
-}
 
-$meta = implode(', ', $myMetadata);
-//$strdataseries = "";
-$datafin = "";
-$dataseries = substr($dataseries, 0, -1);
-$datafin = '[' . $dataseries . ']';
+    $maxval_yaxis += $local_max;
+    $strdataseries .= " {
+                    datasetId: '" . $inverter_name . "', 
+                    label: '" . $inverter_name . "', 
+                    inverter: '" . $inverter_name . "',
+                    type: 'bar',                               
+                    stack: 'Stack 0',
+                    borderWidth: 1,
+                    data: [" . $strdata . "],                    
+                    dataCUM: [],
+                    dataMAX: [], 
+                    dataREF: [],
+                    averageValue: 0,
+                    expectedValue: 0,
+                    maxIndex: 0,
+                    fill: true,
+                    backgroundColor: function(context) {                         
+                       var gradientFill = ctx.createLinearGradient(0, 0, 0, 500);                                             
+                       gradientFill.addColorStop(0, " . $myColor1 . ");
+                       gradientFill.addColorStop(1, " . $myColor2 . ");         
+                       return gradientFill;
+                    },
+                    yAxisID: 'y',
+                    xAxisID: 'x',
+                    isData: true,
+                },
+    ";
+    $strdata = "";
+}
 
 $id = $showTopFlop;
-
 $show_legende = "true";
 if ($isIndexPage) {
-    echo '<div class = "index_chart" id="' . $id . '"></div>';
+    echo '<div class = "index_chart" id="' . $id . '">
+            <canvas id="day_ranking_chart_canvas"></canvas>
+         </div>';
     $show_legende = "false";
-
 }
-include_once "chart_styles.php";
+
+$legendMonth = "";
+foreach ($selectedMonths as $key) {
+    $legendMonth .= $month_local[$key]["MMM"] . ", ";
+}
+$legendMonth = strip($legendMonth);
+
 ?>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="<?= HTML_PATH ?>inc/js/chart_support.js"></script>
 <script>
-    $(function () {
-        function add(accumulator, a) {
-            return accumulator + a;
+    const rankingLegendClickHandler = function (e, legendItem, legend) {
+        let chart = legend.chart;
+        // no default click handler here
+        // Chart.defaults.plugins.legend.onClick(e, legendItem, legend);
+
+        let data = chart.data;
+        let visibleInverters = "";
+
+        for (let inverter of data.inverters) {
+            let idx = findDatasetById(data.datasets, inverter);
+            if (idx >= 0) {
+                if (inverter === legendItem.text) {
+                    if (legendItem.hidden) {
+                        visibleInverters += inverter + ",";
+                    }
+                } else {
+                    let meta = chart.getDatasetMeta(i);
+                    let isHidden = meta.hidden === null ? false : meta.hidden;
+                    if (!isHidden) {
+                        visibleInverters += inverter + ",";
+                    }
+                }
+            }
         }
-        const data = <?= $datafin ?>;
-        const categories = data[0].map(d => d[0]);
-        const myurl = '<?= $myurl ?>';
-        series = this.series;
-        const khhWp = <?= json_encode($params['PLANTS_KWP']) ?>;
-        var nmbr = khhWp.length //misused to get the inverter count
-        const kwptot = khhWp.reduce(add, 0);
-        var sub_title = <?= json_encode($localyear) ?>;
-        var sub_title2 = <?= json_encode($localmonth) ?>;
-        var myoptions = <?= $chart_options ?>;
-        var mychart = new Highcharts.Chart('<?= $id ?>', Highcharts.merge(myoptions, {
-            subtitle: {
-                text: '<b>' + sub_title +  '</b><br/><b> ' + sub_title2 + '</b>',
-                style: {
-                    color: '<?= $colors['color_chart_text_subtitle'] ?>',
+
+        let sort = "<?= $sort ?>";
+        const selectedMonths = $('#month_selection').val().join(',');
+        const selectedYears = $('#year_selection').val().join(',');
+        window.location.href = "?sort=" + sort +
+            "&inverters=" + stripLastChar(visibleInverters) +
+            "&months=" + selectedMonths +
+            "&years=" + selectedYears;
+        chart.update();
+    }
+
+    $(function () {
+            const ctx = document.getElementById('day_ranking_chart_canvas').getContext("2d");
+            Chart.defaults.color = '<?= $colors['color_chart_text_title'] ?>';
+            new Chart(ctx, {
+                data: {
+                    labels: [<?= $labels ?>],
+                    inverters: [<?= $plantNames ?>],
+                    datasets: [<?= $strdataseries  ?>]
                 },
-            },
-            title: {
-                style: {
-                    opacity: 0,
-                      fontWeight: 'normal',
-                    fontSize: '12px'
-                        }
-                      },
-            chart: {
-                type: 'column', stacking: 'normal'
-            },
-            plotOptions: {
-                series: {
-                    states: {
-                        hover: {enabled: false, lineWidth: 0,},
-                        inactive: {opacity: 1}
+                options: {
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            stacked: true,
+                        },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true,
+                        },
                     },
-                    cursor: 'pointer',
-                    //make bars clickable
-                    point: {
-                        events: {
-                            click: function () {
-                                location.href = myurl + this.category;
-                            }
-                        }
-                    },
-                    events: {
-                        legendItemClick: function () {
-                            const chart = this.chart,
-                                currentSeries = this,
-                                secondSeries = currentSeries === chart.series[0] ? chart.series[1] : chart.series[0],
-                                sortFunction = function (a, b) {
-                                    return b[1] - a[1]
-                                };
-                            if (!(
-                                (currentSeries.visible && !secondSeries.visible)
-                                || (!currentSeries.visible && secondSeries.visible)
-                            )) {
-                                if (!currentSeries.visible && !secondSeries.visible) {
-                                    // sorting by this series
-                                    let sortedData = data[currentSeries.index].sort(sortFunction),
-                                        seriesCategories = sortedData.map(d => d[0]);
-                                    chart.xAxis[0].update({
-                                        categories: seriesCategories
-                                    });
-                                } else {
-                                    // sorting by second one series
-                                    let sortedData = data[secondSeries.index].sort(sortFunction),
-                                        seriesCategories = sortedData.map(d => d[0]);
-                                    chart.xAxis[0].update({
-                                        categories: seriesCategories
-                                    });
+                    plugins: {
+                        customCanvasBackgroundColor: {
+                            color: '<?= $colors['color_chartbackground'] ?>',
+                        },
+                        legend: {
+                            display: <?= $show_legende ?>,
+                            position: 'bottom',
+                            labels: {
+                                filter: item => !item.text.includes('line'),
+                                generateLabels: function (chart) {
+                                    const visibleInverters = [<?= $visibleInverters ?>];
+                                    const items = chart.data.inverters.map(function (inverter) {
+                                        const vis = !visibleInverters.includes(inverter);
+                                        let idx = findDatasetById(chart.data.datasets, inverter);
+                                        return (
+                                            {
+                                                datasetIndex: idx,
+                                                text: inverter,
+                                                hidden: vis
+                                            })
+                                    })
+                                    return items
                                 }
-                            } else {
-                                // sorting by both series
-                                chart.xAxis[0].update({
-                                    categories: categories
-                                });
+                            },
+                            onClick: rankingLegendClickHandler,
+                        },
+                        subtitle: {
+                            display: true,
+                            text: ['<?= implode(", ", $selectedYears)?>', '<?=$legendMonth?>'],
+                        },
+                    },
+                    onClick: (event, elements, chart) => {
+                        if (elements[0]) {
+                            const i = elements[0].index;
+                            const url = chart.data.datasets[0].data[i].url;
+                            if (url.length > 0) {
+                                location.href = url;
                             }
                         }
                     }
-                }
-            },
-            xAxis: {
-                type: 'category',
-                categories: categories,
-                labels: {
-                    rotation: 270,
-                    style: {color: '<?= $colors['color_chart_labels_xaxis1'] ?>'},
                 },
-            },
-            yAxis: [{ // Primary yAxis
-                opposite: true,
-                labels: {
-                    formatter: function () {
-                        return this.value
-                    },
-                    style: {
-                        color: '<?= $colors['color_chart_labels_yaxis1'] ?>',
-                    },
-                },
-                title: {
-                    text: 'Total (kWh)',
-                    style: {
-                        color: '<?= $colors['color_chart_title_yaxis1'] ?>'
-                    },
-                },
-                gridLineColor: '<?= $colors['color_chart_gridline_yaxis1'] ?>',
-            }],
-            tooltip: {
-                formatter: function () {
-                    var chart = this.series.chart,
-                        x = this.x,
-                        stackName = this.series.userOptions.stack,
-                        contribuants = '';
-                    var index = this.series.data.indexOf(this.point);
-                    var id = this.point.x + 1;
-                    /* console.log(this); */
-                    Totalen = 0
-                    chart.series.forEach(function (series, i) {
-                        series.points.forEach(function (point) {
-                            if (point.category === x && stackName === point.series.userOptions.stack) {
-                                contribuants += '<span style="color:' + point.series.color + '">\u25CF</span>' + point.series.name + ': ' + Highcharts.numberFormat(point.y, '2', ',') + ' kWh' + ' = ' + Highcharts.numberFormat(point.y / (0.001 * khhWp[i]), '2', ',') + ' Wh/Wp<br/>',
-                                    Totalen += point.y
-                            }
-                        })
-                    })
-                    //console.log(this.point);
-                    if (stackName === undefined) {
-                        stackName = '';
-                    }
-                    return '<b>' + id + '.</b>&emsp;  &emsp;&emsp;&emsp;&emsp;&emsp; &emsp; ' + x + ' ' + stackName + '<br/>' + contribuants + 'Total: ' + Highcharts.numberFormat(Totalen, '2', ',') + ' kWh' + ' = ' + Highcharts.numberFormat(Totalen / (0.001 * kwptot), '2', ',') + ' Wh/Wp';
-                }
-            },
-            series: [<?= $meta ?>]
-        }));
-        setInterval(function () {
-            $("#<?= $id ?>").highcharts().reflow();
-        }, 500);
-    });
+                plugins: [getPlugin()],
+            });
+        }
+    )
+
 </script>

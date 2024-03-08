@@ -10,20 +10,10 @@ unset($amaxref);
 
 include_once ROOT_DIR . "/inc/header.php";
 include_once "../charts/top31_chart.php";
+
 $padding = '- 0px';
 $corners = 'border-bottom-left-radius: 0px !important; border-bottom-right-radius: 0px;';
-$month_local = [];
-//$sort = ['ASC', 'DESC'];
-//$sort = 'desc';
-$types = ['M', 'MMM', 'MMMM'];
-  foreach ($types as $tk => $tv) {
-    $df = new IntlDateFormatter($locale, IntlDateFormatter::NONE, IntlDateFormatter::NONE, NULL, NULL, $tv);
-    for ($i = 1; $i<=12; $i++)    {
-          $month_local[$i][$tk] = $df->format(mktime(0, 0, 0, $i));
-          $month_local[$i][$tk]=str_replace('.','',$month_local[$i][$tk]);
-        }
-    }
-//print_r($month_local)
+
 ?>
 <div id="page-content">
     <div id='resize' class="bigCharts"
@@ -33,113 +23,179 @@ $types = ['M', 'MMM', 'MMMM'];
         </div>
         <div id="chart_header" class="<?= HEADER_CLASS ?>" style=" align-content: center; ">
             <h2><?= getTxt("chart_31days"); ?></h2>
-                   <div class="block2" >
-                    <div class="inner" id="Months" style="z-index: 999 !important; vertical-align: bottom !important; position:relative">
-                        <select id="coffee" name="roles" class="selectpicker show-tick"
-                        title="<?= getTxt("maand"); ?>"
-                        multiple="multiple"
-                        data-width="fit"
-                        data-selected-text-format="static"
+            <div class="block2">
+                <div class="inner" id="Months"
+                     style="z-index: 999 !important; vertical-align: bottom !important; position:relative">
+                    <select id="month_selection" name="roles" class="selectpicker show-tick"
+                            title="<?= getTxt("maand"); ?>"
+                            multiple="multiple"
+                            data-width="fit"
+                            data-selected-text-format="static"
                             data-count-selected-text="{0} <?= getTxt("maand_sel"); ?>">
-                        <?php    for($k=1; $k<= count($month_local); $k++){ ?>
-                        <option title=<?=$month_local[$k][1]?> value= '<?=$month_local[$k][0]?>'><?=$month_local[$k][2]?></option>
-                        <?php } ?>
-                        </select>
-                    </div>
-                    <div class="inner" id="Years" style="z-index: 999 !important; position:relative; font-size: 13px !important; color:red;">
-                    <select id="tea" name="roles" class="selectpicker show-tick"
-                        title="<?= getTxt("jaar") ?>"
-                        text-align="center"
-                        multiple="multiple"
-                        data-width="fit"
-                        data-selected-text-format="static"
-                        data-count-selected-text="{0} <?= getTxt("jaar_sel"); ?>"     >
-                          <?php
-                        foreach($years as $item){
-                        echo "<option value='$item'>$item</option>";
+                        <?php
+                        $option = "";
+                        for ($k = 1; $k <= count($month_local); $k++) {
+                            $option .= "<option value=" . $k . "" . getIsSelectedString($k, $selectedMonths) . ">" . $month_local[$k]['MMMM'] . "</option>";
+                        }
+                        echo $option;
+                        ?>
+
+                    </select>
+                </div>
+                <div class="inner" id="Years"
+                     style="z-index: 999 !important; position:relative; font-size: 13px !important; color:red;">
+                    <select id="year_selection" name="roles" class="selectpicker show-tick"
+                            title="<?= getTxt("jaar") ?>"
+                            text-align="center"
+                            multiple="multiple"
+                            data-width="fit"
+                            data-selected-text-format="static"
+                            data-count-selected-text="{0} <?= getTxt("jaar_sel"); ?>">
+                        <?php
+                        foreach ($years as $item) {
+                            echo "<option value='$item' " . getIsSelectedString($item, $selectedYears) . ">$item</option>";
                         }
                         ?>
-                          </select>
-                    </div><!--.jumbotron-->
-                    <div class="inner" id="Sort" style="z-index: 999 !important; position:relative">
-                        <a onclick="toggleText()" class="p-1 btn btn-zonphp" data-bs-toggle="collapse"
-                        id="toggle" href="#hiddenContent" role="button" aria-expanded="false" aria-controls="collapseExample"
-                        style="border-top-width: 1px; border-bottom-width: 1px; height: 27px;  vertical-align: top; "><?= getTxt("desc"); ?></a>
-                    </div><!--.jumbotron    -->
-                </div>
-                <script> // fills the empty dropdown on first load
-                $(document).ready(function() {
-                $('.selectpicker').selectpicker('toggle');
+                    </select>
+                </div><!--.jumbotron-->
+                <div class="inner" id="Sort" style="z-index: 999 !important; position:relative">
+                    <a onclick="toggleText()" class="p-1 btn btn-zonphp" data-bs-toggle="collapse"
+                       id="toggle" href="#hiddenContent" role="button" aria-expanded="false"
+                       aria-controls="collapseExample"
+                       style="border-top-width: 1px; border-bottom-width: 1px; height: 27px;  vertical-align: top; "><?= getTxt($sort); ?></a>
+                </div><!--.jumbotron    -->
+                <div class="inner" id="filter" style="z-index: 999 !important; position:relative">
+                    <a onclick="myPrompt()" class="p-1 btn btn-zonphp" data-bs-toggle="collapse"
+                       id="myPrompt" href="#hiddenContent" role="button" aria-expanded="false"
+                       aria-controls="collapseExample"
+                       style="border-top-width: 1px; border-bottom-width: 1px; height: 27px;  vertical-align: top; ">Filter</a>
+                </div><!--.jumbotron    -->
+            </div>
+            <script> // fills the empty dropdown on first load
+                $(document).ready(function () {
+                    $('.selectpicker').selectpicker('toggle');
                 });
-                </script>
-                <script>
-                sort = "Desc";
-                //allselected =["1","2","3","4","5","6","7","8","9","10","11","12"];
+            </script>
+            <script>
+                let sort = "<?= $sort ?>";
+
+                function myPrompt(text, O, cancel, defaultValue) {
+                    let dialog = document.querySelector("#prompt");
+                    dialog.show();
+                }
+
+                function myOK() {
+                    let dialog = document.querySelector("#prompt");
+                    let months = document.getElementsByName("months")
+                    selectedMonths = "";
+                    months.forEach(function (month) {
+                        if (month.checked) {
+                            console.log(month)
+                            selectedMonths = selectedMonths + month.value + ","
+                        }
+                    })
+                    let years = document.getElementsByName("years")
+                    let selectedYears = "";
+                    years.forEach(function (year) {
+                        if (year.checked) {
+                            console.log(year)
+                            selectedYears = selectedYears + year.value + ","
+                        }
+                    })
+                    const visibleInverters = "<?= $visibleInvertersJS ?>";
+                    window.location.href = "?sort=" + sort +
+                        "&inverters=" + visibleInverters +
+                        "&months=" + stripLastChar(selectedMonths) +
+                        "&years=" + stripLastChar(selectedYears);
+                }
+
+                function myCancel() {
+                    var dialog = document.querySelector("#prompt");
+                    dialog.close();
+                }
+
                 function toggleText() {
-                      var x = document.getElementById("toggle");
-                      if (x.innerHTML === "<?= getTxt("desc"); ?>") {
-                    x.innerHTML = "<?= getTxt("asc"); ?>";
-                      sort = "Asc";
-                      } else {
-                    x.innerHTML = "<?= getTxt("desc"); ?>";
-                      sort = "Desc";
-                      }
-                var abc = $.ajax({
-                type: 'POST',
-                url: '../charts/top31_chart.php',
-                data: {'sort': sort, 'allselected': window.allselected, 'allselectedtea': window.allselectedtea, 'localmonth': window.selectedMonths, 'localyear': window.selectedYears },
-                success: function(data) {
-                   $('#top31_chart').html(data);
-            
-                        }
-                      })
-                }
-                $.fn.selectpicker.Constructor.BootstrapVersion = '5';
-                $.fn.selectpicker.defaults = { template: { caret: ''}};
-                $('.selectpicker').selectpicker({iconBase: 'fa', tickIcon: 'fa-check',style: 'btn btn-zonphp'});
-                  $('.selectpicker').change(function () {
-                var selectedItem = $('#coffee').val();
-                    selectedMonths = $('#coffee option:selected').map(function() {
-                return $(this).text();
-                  }).get().join(', ');
-                    selectedYears = $('#tea option:selected').map(function() {
-                return $(this).text();
-                  }).get().join(', ');
-                    var selectedItem2 = $('#coffee').attr('title');
-                    var selectedItem2 = $('#tea').val();
-                    if (Object.keys(selectedItem).length >0)
-                {
-                allselected = selectedItem.toString();
+                    let x = document.getElementById("toggle");
+                    if (sort === "desc") {
+                        x.innerHTML = "<?= getTxt("asc"); ?>";
+                        // x.innerHTML = "⬇︎";
+                        sort = "asc";
+                    } else {
+                        x.innerHTML = "<?= getTxt("desc"); ?>";
+                        // x.innerHTML = "⬆︎";
+                        sort = "desc";
                     }
-                else {
-                allselected = (<?=json_encode($whereInMonth)?>)
+                    const selectedMonths = $('#month_selection').val().join(',');
+                    const selectedYears = $('#year_selection').val().join(',');
+                    const visibleInverters = "<?= $visibleInvertersJS ?>";
+                    window.location.href = "?sort=" + sort +
+                        "&inverters=" + visibleInverters +
+                        "&months=" + selectedMonths +
+                        "&years=" + selectedYears;
                 }
-                if (Object.keys(selectedItem2).length >0)
-                {
-                allselectedtea = selectedItem2.toString();
-                }
-                   else{
-                   allselectedtea = (<?=json_encode($whereInYear)?>)
-                   }
-                   var def = $.ajax({
-                type: 'POST',
-                url: '../charts/top31_chart.php',
-                data: {'allselected': window.allselected, 'allselectedtea': window.allselectedtea, 'sort': window.sort, 'localmonth': window.selectedMonths, 'localyear': window.selectedYears },
-                success: function(data) {
-                   $('#top31_chart').html(data);
-                        }
-                      })
-                   })
-                </script>
+
+                $.fn.selectpicker.Constructor.BootstrapVersion = '5';
+                $.fn.selectpicker.defaults = {template: {caret: ''}};
+
+                $('.selectpicker').selectpicker({iconBase: 'fa', tickIcon: 'fa-check', style: 'btn btn-zonphp'});
+                $('.selectpicker').change(function () {
+                    const selectedMonths = $('#month_selection').val().join(',');
+                    const selectedYears = $('#year_selection').val().join(',');
+                    const visibleInverters = "<?= $visibleInvertersJS ?>";
+                    window.location.href = "?sort=" + sort +
+                        "&inverters=" + visibleInverters +
+                        "&months=" + selectedMonths +
+                        "&years=" + selectedYears;
+                })
+
+            </script>
         </div><!--.chart_header-->
+        <dialog id="prompt" role="dialog" aria-labelledby="prompt-dialog-heading">
+            <h2 id="prompt-dialog-heading">Filter</h2>
+            <div class="table_component">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Month</th>
+                        <th>Year</th>
+
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td>
+                            <?php
+                            for ($k = 1; $k <= count($month_local); $k++) {
+                                echo "<input type='checkbox' id='$k' name='months' value='$k'" . getIsCheckedString($k, $selectedMonths) . ">";
+                                echo "<label for='$k'>" . $month_local[$k]['MMMM'] . "</label><br>";
+                            }
+                            ?>
+                        </td>
+                        <td>
+                            <?php
+                            foreach ($years as $item) {
+                                echo "<input type='checkbox' id='$item' name='years' value='$item'" . getIsCheckedString($item, $selectedYears) . ">";
+                                echo "<label for='$item'>" . $item . "</label><br>";
+                            }
+                            ?>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <br>
+            <p class="button-row">
+                <button name="cancel" onclick="myCancel()">Abbrechen</button> &nbsp; &nbsp;
+                <button name="ok" onclick="myOK()">OK</button>
+            </p>
+        </dialog>
         <div id="top31_chart"
              style="width:100%; background-color: <?= $colors['color_chartbackground'] ?>;height:100%; <?= $corners; ?>">
-        <?php var_dump($_POST) ?>
+            <canvas id="day_ranking_chart_canvas"></canvas>
         </div>
+
         <div>
-        <?php
-        include_once ROOT_DIR . "/inc/footer.php"
-        ?>
+            <?php include_once ROOT_DIR . "/inc/footer.php" ?>
         </div>
         <br>
     </div>

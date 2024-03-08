@@ -10,13 +10,17 @@ function findDatasetById(datasets, name) {
 
 // copy array and set y-value to 0
 function cloneAndResetY(originalArray) {
-    var newArray = [];
+    let newArray = [];
     for (let i in originalArray) {
         newArray[i] = {x: originalArray[i].x, y: 0};
     }
     return newArray;
 }
 
+function stripLastChar(value) {
+    if (value.length > 0)
+        return value.substring(0, value.length - 1);
+}
 
 function getPlugin() {
     return {
@@ -35,6 +39,7 @@ function getPlugin() {
 
 function getCustomLegendClickHandler() {
     return function (e, legendItem, legend) {
+        // myTest();
         let chart = legend.chart;
         Chart.defaults.plugins.legend.onClick(e, legendItem, legend);
         let data = chart.data;
@@ -43,7 +48,6 @@ function getCustomLegendClickHandler() {
         let cumSum = []
         let maxSum = [];
         let refSum = [];
-
 
         for (i in data.datasets) {
             let meta = chart.getDatasetMeta(i);
@@ -71,7 +75,6 @@ function getCustomLegendClickHandler() {
                 // cum
                 for (ii in dataset.data) {
                     if (dataset.dataCUM[ii].y != null) {
-                        var x = dataset.dataCUM[ii]
                         cumSum[ii].y = cumSum[ii].y + dataset.dataCUM[ii].y;
                     }
                 }

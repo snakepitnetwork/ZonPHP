@@ -48,3 +48,21 @@ function strip($value): string
     $out = substr($out, 0, -1);
     return $out;
 }
+
+function getIsSelectedString ($key, $array) : string {
+    if (in_array($key, $array)) {
+        $isSelected = " selected";
+    } else {
+        $isSelected = "";
+    }
+    return $isSelected;
+}
+
+function getIsCheckedString ($key, $array) : string {
+    if (in_array($key, $array)) {
+        $isChecked = " checked";
+    } else {
+        $isChecked = "";
+    }
+    return $isChecked;
+}
