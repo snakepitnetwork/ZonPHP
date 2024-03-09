@@ -2,7 +2,7 @@
 global $con, $colors, $params, $chart_options, $locale;
 include_once "../inc/init.php";
 include_once ROOT_DIR . "/inc/connect.php";
-include_once "chart_support.php";
+include_once ROOT_DIR . "/charts/chart_support.php";
 
 $showTopFlop = "top31_chart";
 $isIndexPage = false;
@@ -37,13 +37,13 @@ if (isset($_GET['sort']) && $_GET['sort'] != "undefined") {
 $visibleInvertersJS = "";
 if (isset($_GET['inverters']) && $_GET['inverters'] != "undefined" && $_GET['inverters'] != "") {
     $input = explode(',', $_GET['inverters']);
-    $visibleInverters = "'" . implode("', '", $input) . "'";
+    $visibleInvertersString = "'" . implode("', '", $input) . "'";
     $visibleInvertersJS = implode(",", $input);
 } else {
-    $visibleInverters = "'" . implode("', '", PLANT_NAMES) . "'";
+    $visibleInvertersString = "'" . implode("', '", PLANT_NAMES) . "'";
     $visibleInvertersJS = implode(",", PLANT_NAMES);
 }
-$whereInClause = " where naam in ($visibleInverters)";
+$whereInClause = " where naam in ($visibleInvertersString)";
 
 
 if (isset($_GET['months']) && $_GET['months'] != "undefined" && $_GET['months'] != "") {
@@ -55,7 +55,7 @@ if (isset($_GET['months']) && $_GET['months'] != "undefined" && $_GET['months'] 
 if (isset($_GET['years']) && $_GET['years'] != "undefined" && $_GET['years'] != "") {
     $selectedYears = explode(",", $_GET['years']);
 } else {
-    $selectedYears = array();;
+    $selectedYears = array();
 }
 
 
@@ -221,7 +221,7 @@ $legendMonth = strip($legendMonth);
                             labels: {
                                 filter: item => !item.text.includes('line'),
                                 generateLabels: function (chart) {
-                                    const visibleInverters = [<?= $visibleInverters ?>];
+                                    const visibleInverters = [<?= $visibleInvertersString ?>];
                                     const items = chart.data.inverters.map(function (inverter) {
                                         const vis = !visibleInverters.includes(inverter);
                                         let idx = findDatasetById(chart.data.datasets, inverter);

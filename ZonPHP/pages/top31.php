@@ -57,19 +57,19 @@ $corners = 'border-bottom-left-radius: 0px !important; border-bottom-right-radiu
                         }
                         ?>
                     </select>
-                </div><!--.jumbotron-->
+                </div>
                 <div class="inner" id="Sort" style="z-index: 999 !important; position:relative">
                     <a onclick="toggleText()" class="p-1 btn btn-zonphp" data-bs-toggle="collapse"
                        id="toggle" href="#hiddenContent" role="button" aria-expanded="false"
                        aria-controls="collapseExample"
                        style="border-top-width: 1px; border-bottom-width: 1px; height: 27px;  vertical-align: top; "><?= getTxt($sort); ?></a>
-                </div><!--.jumbotron    -->
+                </div>
                 <div class="inner" id="filter" style="z-index: 999 !important; position:relative">
                     <a onclick="myPrompt()" class="p-1 btn btn-zonphp" data-bs-toggle="collapse"
                        id="myPrompt" href="#hiddenContent" role="button" aria-expanded="false"
                        aria-controls="collapseExample"
-                       style="border-top-width: 1px; border-bottom-width: 1px; height: 27px;  vertical-align: top; ">Filter</a>
-                </div><!--.jumbotron    -->
+                       style="border-top-width: 1px; border-bottom-width: 1px; height: 27px;  vertical-align: top; "><?= getTxt("filter"); ?></a>
+                </div>
             </div>
             <script> // fills the empty dropdown on first load
                 $(document).ready(function () {
@@ -85,12 +85,10 @@ $corners = 'border-bottom-left-radius: 0px !important; border-bottom-right-radiu
                 }
 
                 function myOK() {
-                    let dialog = document.querySelector("#prompt");
                     let months = document.getElementsByName("months")
                     selectedMonths = "";
                     months.forEach(function (month) {
                         if (month.checked) {
-                            console.log(month)
                             selectedMonths = selectedMonths + month.value + ","
                         }
                     })
@@ -98,7 +96,6 @@ $corners = 'border-bottom-left-radius: 0px !important; border-bottom-right-radiu
                     let selectedYears = "";
                     years.forEach(function (year) {
                         if (year.checked) {
-                            console.log(year)
                             selectedYears = selectedYears + year.value + ","
                         }
                     })
@@ -151,14 +148,13 @@ $corners = 'border-bottom-left-radius: 0px !important; border-bottom-right-radiu
             </script>
         </div><!--.chart_header-->
         <dialog id="prompt" role="dialog" aria-labelledby="prompt-dialog-heading">
-            <h2 id="prompt-dialog-heading">Filter</h2>
+            <h2 id="prompt-dialog-heading"><?= getTxt("filter"); ?></h2>
             <div class="table_component">
                 <table>
                     <thead>
                     <tr>
-                        <th>Month</th>
-                        <th>Year</th>
-
+                        <th><?= getTxt("maand"); ?></th>
+                        <th><?= getTxt("jaar"); ?></th>
                     </tr>
                     </thead>
                     <tbody>
@@ -185,8 +181,8 @@ $corners = 'border-bottom-left-radius: 0px !important; border-bottom-right-radiu
             </div>
             <br>
             <p class="button-row">
-                <button name="cancel" onclick="myCancel()">Abbrechen</button> &nbsp; &nbsp;
-                <button name="ok" onclick="myOK()">OK</button>
+                <button class="p-1 btn btn-zonphp" name="cancel" onclick="myCancel()"><?= getTxt("cancel"); ?></button> &nbsp; &nbsp;
+                <button class="p-1 btn btn-zonphp" name="ok" onclick="myOK()"><?= getTxt("ok"); ?></button>
             </p>
         </dialog>
         <div id="top31_chart"

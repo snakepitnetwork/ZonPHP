@@ -19,10 +19,11 @@ function convertValueArrayToDataString($array): string
 {
     $out = "";
     foreach ($array as $key => $value) {
-        $out .= '"' .$value . '",';
+        $out .= '"' . $value . '",';
     }
     return strip($out);
 }
+
 function convertKeyValueArrayToDataString($array): string
 {
     $out = "";
@@ -36,7 +37,7 @@ function buildConstantDataString($value, $count): string
 {
     $out = "";
     for ($i = 1; $i <= $count; $i++) {
-        $out .= '"' .$value . '",';
+        $out .= '"' . $value . '",';
     }
     return $out;
 }
@@ -49,7 +50,8 @@ function strip($value): string
     return $out;
 }
 
-function getIsSelectedString ($key, $array) : string {
+function getIsSelectedString($key, $array): string
+{
     if (in_array($key, $array)) {
         $isSelected = " selected";
     } else {
@@ -58,11 +60,34 @@ function getIsSelectedString ($key, $array) : string {
     return $isSelected;
 }
 
-function getIsCheckedString ($key, $array) : string {
+function getIsCheckedString($key, $array): string
+{
     if (in_array($key, $array)) {
         $isChecked = " checked";
     } else {
         $isChecked = "";
     }
     return $isChecked;
+}
+
+function getIsHidden($key, $array): string
+{
+    if (in_array($key, $array)) {
+        $isChecked = "false";
+    } else {
+        $isChecked = "true";
+    }
+    return $isChecked;
+}
+
+/**
+ * @param String $dateString
+ * @return string
+ */
+function updateDate($dateString): string
+{
+    $suppliedDate = new DateTime($dateString);
+    $currentYear = (int)(new DateTime())->format('Y');
+    $newDate = (new DateTime())->setDate($currentYear, (int)$suppliedDate->format('m'), (int)$suppliedDate->format('d'));
+    return $newDate->format('Y-m-d');
 }
