@@ -9,7 +9,7 @@ unset($fgemiddelde);
 unset($amaxref);
 
 include_once ROOT_DIR . "/inc/header.php";
-include_once "../charts/top31_chart.php";
+include_once "../charts/ranking_chart.php";
 
 $padding = '- 0px';
 $corners = 'border-bottom-left-radius: 0px !important; border-bottom-right-radius: 0px;';

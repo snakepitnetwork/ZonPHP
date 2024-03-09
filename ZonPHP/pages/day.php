@@ -19,7 +19,7 @@ include_once "../charts/day_chart.php";
             autoclose: true,
         });
         $('#datepicker').datepicker().on('changeDate', function (e) {
-            var url = "day_overview.php?date=" + e.format();
+            var url = "day.php?date=" + e.format();
             window.open(url, "_self");
             //alert(language);
         });

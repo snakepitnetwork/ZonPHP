@@ -79,7 +79,7 @@ if (mysqli_num_rows($resultmax) > 0) {
 $labels = $shortMonthLabels;
 $myColors = colorsPerInverter();
 $my_year = date("Y", $chartdate);
-$myurl = HTML_PATH . "pages/month_overview.php?date=";
+$myurl = HTML_PATH . "pages/month.php?date=";
 
 $maxIndex = 0;
 $strdataseries = "";

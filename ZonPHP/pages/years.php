@@ -3,7 +3,7 @@ global $params, $sum_per_year, $colors, $big_chart_height;
 include_once "../inc/init.php";
 include_once ROOT_DIR . "/inc/connect.php";
 include_once ROOT_DIR . "/inc/header.php";
-include_once "../charts/all_years_chart.php";
+include_once "../charts/years_chart.php";
 // force reload caches
 if (isset($_SESSION['lastupdate'])) {
     $_SESSION['lastupdate'] = 0;

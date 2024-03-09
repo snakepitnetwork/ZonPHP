@@ -27,7 +27,7 @@ include_once "../charts/year_chart.php";
             let day = today.getDate();
             var zonP = (d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + day);
             //alert(zonP); 
-            var url = "year_overview.php?date=" + zonP;
+            var url = "year.php?date=" + zonP;
             window.open(url, "_self");
         });
     });

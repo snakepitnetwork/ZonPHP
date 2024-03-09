@@ -81,7 +81,7 @@ $adatum = array_values(array_unique($adatum));
 
 <?php
 // -----------------------------  build data for chart -----------------------------------------------------------------
-$myurl = HTML_PATH . "pages/day_overview.php?date=";
+$myurl = HTML_PATH . "pages/day.php?date=";
 $myMetadata = array();
 $myColors = colorsPerInverter();
 $plantNames = "";

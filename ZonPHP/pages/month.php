@@ -22,7 +22,7 @@ include_once ROOT_DIR . "/charts/month_chart.php";
         $('#datepicker').datepicker().on('changeMonth', function (e) {
             var d = new Date(e.date.valueOf());
             var zonP = (d.getFullYear() + '-' + (d.getMonth() + 1));
-            var url = "month_overview.php?date=" + zonP;
+            var url = "month.php?date=" + zonP;
             window.open(url, "_self");
             //alert(language);
         });

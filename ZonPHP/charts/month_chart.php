@@ -102,7 +102,7 @@ while ($row = mysqli_fetch_array($result)) {
 // build colors per inverter array
 $myColors = colorsPerInverter();
 // collect data array
-$myurl = HTML_PATH . "pages/day_overview.php?date=";
+$myurl = HTML_PATH . "pages/day.php?date=";
 $strdataseries = "";
 $maxval_yaxis = 0;
 $myColor1 = "'#FFAABB'";

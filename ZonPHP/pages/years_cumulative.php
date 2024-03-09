@@ -4,7 +4,7 @@ include_once "../inc/init.php";
 include_once ROOT_DIR . "/inc/connect.php";
 include_once ROOT_DIR . "/inc/header.php";
 include_once ROOT_DIR . "/charts/chart_support.php";
-include_once ROOT_DIR . "/charts/cumulative_chart.php";
+include_once ROOT_DIR . "/charts/years_cumulative_chart.php";
 
 $padding = '- 0px';
 $corners = 'border-bottom-left-radius: 0px !important; border-bottom-right-radius: 0px;';

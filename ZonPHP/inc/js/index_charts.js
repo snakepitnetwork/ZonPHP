@@ -132,7 +132,7 @@ function load_charts() {
         const itemTemplate = '' +
             '<div class="item h4 w4" data-id="' + id + '">' +
             '   <div  class="item-content card"> ' +
-            '       <a href="./pages/day_overview.php"><div id="chart_header_day" class="' + headerclass + '">' + daytext + " - " + chartdatestring + '</div> </a> ' +
+            '       <a href="./pages/day.php"><div id="chart_header_day" class="' + headerclass + '">' + daytext + " - " + chartdatestring + '</div> </a> ' +
             '       <div id="' + id + '">' +
             '   </div>' +
             '</div>';
@@ -158,7 +158,7 @@ function load_charts() {
         const itemTemplate = '' +
             '<div class="item h4 w4" data-id="' + id + '">' +
             '   <div  class="item-content card"> ' +
-            '       <a href="./pages/month_overview.php"><div id="chart_header_month" class="' + headerclass + '">' + txt["chart_monthoverview"] + " - " + chartmonthstring + " " + chartyearstring + '</div> </a> ' +
+            '       <a href="./pages/month.php"><div id="chart_header_month" class="' + headerclass + '">' + txt["chart_monthoverview"] + " - " + chartmonthstring + " " + chartyearstring + '</div> </a> ' +
             '       <div id="' + id + '">' +
             '   </div>' +
             '</div>';
@@ -184,7 +184,7 @@ function load_charts() {
         const itemTemplate = '' +
             '<div class="item h4 w4" data-id="' + id + '">' +
             '   <div  class="item-content card"> ' +
-            '       <a href="./pages/all_years_overview.php"><div id="chart_header_allYears" class="' + headerclass + '">' + txt["chart_allyearoverview"] + '</div></a>' +
+            '       <a href="./pages/years.php"><div id="chart_header_allYears" class="' + headerclass + '">' + txt["chart_allyearoverview"] + '</div></a>' +
             '       <div id ="' + id + '">' +
             '   </div>' +
             '</div>';
@@ -195,7 +195,7 @@ function load_charts() {
 
         const container = $('#' + id);
         $.ajax({
-            url: 'charts/all_years_chart.php',
+            url: 'charts/years_chart.php',
             type: 'post',
             data: {'action': 'indexpage'},
             cache: false,
@@ -211,7 +211,7 @@ function load_charts() {
         const itemTemplate = '' +
             '<div class="item h4 w4" data-id="' + id + '">' +
             '   <div class="item-content card"> ' +
-            '       <a href="./pages/top31.php"><div id="chart_header" class="' + headerclass + '">' + txt["chart_31days"] + '</div></a>' +
+            '       <a href="./pages/ranking.php"><div id="chart_header" class="' + headerclass + '">' + txt["chart_31days"] + '</div></a>' +
             '       <div id="' + id + '">' +
             '   </div>' +
             '   </div>';
@@ -221,7 +221,7 @@ function load_charts() {
 
         const container = $('#' + id);
         $.ajax({
-            url: 'charts/top31_chart.php',
+            url: 'charts/ranking_chart.php',
             type: 'post',
             data: {'action': 'indexpage'},
             cache: false,
@@ -236,7 +236,7 @@ function load_charts() {
         const itemTemplate = '' +
             '<div class="item h4 w4" data-id="' + id + '">' +
             '   <div class="item-content card"> ' +
-            '       <a href="./pages/year_overview.php"><div id="chart_header_year" class="' + headerclass + '">' + txt["chart_yearoverview"] + " - " + chartyearstring + '</div></a>' +
+            '       <a href="./pages/year.php"><div id="chart_header_year" class="' + headerclass + '">' + txt["chart_yearoverview"] + " - " + chartyearstring + '</div></a>' +
             '       <div    id="' + id + '">' +
             '   </div>' +
             '</div>';
@@ -261,7 +261,7 @@ function load_charts() {
         const itemTemplate = '' +
             '<div class="item h4 w4" data-id="' + id + '">' +
             '   <div class  ="item-content card"> ' +
-            '       <a href="./pages/cumulative_overview.php"><div id="chart_header" class="' + headerclass + '">' + txt["chart_cumulativeoverview"] + '</div></a>' +
+            '       <a href="./pages/years_cumulative.php"><div id="chart_header" class="' + headerclass + '">' + txt["chart_cumulativeoverview"] + '</div></a>' +
             '       <div id="' + id + '">' +
             '   </div>' +
             '</div>';
@@ -271,7 +271,7 @@ function load_charts() {
 
         const container = $('#' + id);
         $.ajax({
-            url: 'charts/cumulative_chart.php',
+            url: 'charts/years_cumulative_chart.php',
             type: 'post',
             data: {'action': 'indexpage'},
             cache: false,
@@ -286,7 +286,7 @@ function load_charts() {
         const itemTemplate = '' +
             '<div class="item h4 w4" data-id="' + id + '">' +
             '   <div class="item-content card"> ' +
-            '       <a href="./pages/last_years_overview.php"><div id="chart_header" class="' + headerclass + '">' + txt["chart_lastyearoverview"] + '</div></a>' +
+            '       <a href="./pages/months.php"><div id="chart_header" class="' + headerclass + '">' + txt["chart_lastyearoverview"] + '</div></a>' +
             '       <div id="' + id + '">' +
             '   </div>' +
             '</div>';
@@ -296,7 +296,7 @@ function load_charts() {
 
         const container = $('#' + id);
         $.ajax({
-            url: 'charts/last_years_chart.php',
+            url: 'charts/months_chart.php',
             type: 'post',
             data: {'action': 'indexpage'},
             cache: false,

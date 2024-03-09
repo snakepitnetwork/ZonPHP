@@ -96,7 +96,7 @@ if (mysqli_num_rows($resultmax) == 0) {
 
 <?php
 // -----------------------------  build data for chart -----------------------------------------------------------------
-$href = HTML_PATH . "pages/month_overview.php?date=";
+$href = HTML_PATH . "pages/month.php?date=";
 $sum_per_month = array();
 $cnt_per_month = array();
 $totalsumMaxArray = array();
@@ -302,7 +302,7 @@ $strdataseries .= "{
 $subtitle = "Subtitle is missing";
 $show_legende = "true";
 if ($isIndexPage) {
-    echo '<div class = "index_chart" id="all_years_chart_' . $inverter . '">
+    echo '<div class = "index_chart" id="years_chart_' . $inverter . '">
               <canvas id="last_year_chart_canvas"></canvas>
           </div>';
     $show_legende = "false";

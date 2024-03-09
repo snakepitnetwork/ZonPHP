@@ -66,7 +66,7 @@ while ($row = mysqli_fetch_array($result)) {
 ?>
 <?php
 // ----------------------------- build data for chart -----------------------------------------------------------------
-$myurl = HTML_PATH . "pages/year_overview.php?date=";
+$myurl = HTML_PATH . "pages/year.php?date=";
 $my_year = date("Y", time());
 
 $yearcount = count($sum_per_year);
