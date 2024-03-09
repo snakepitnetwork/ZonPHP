@@ -110,3 +110,73 @@ function getCustomLegendClickHandler() {
         chart.update();
     };
 }
+
+function myPrompt() {
+    let dialog = document.querySelector("#prompt");
+    dialog.show();
+}
+
+function checkInverters() {
+    let checkbox = document.getElementById("all_inverter")
+    let inverters = document.getElementsByName("inverters")
+    inverters.forEach(function (inverter) {
+        inverter.checked = checkbox.checked;
+    })
+}
+
+function updateCheckedInverters() {
+    let allChecked = true
+    let checkbox = document.getElementById("all_inverter")
+    let inverters = document.getElementsByName("inverters")
+    inverters.forEach(function (inverter) {
+        if (inverter.checked === false) {
+            allChecked = false;
+        }
+    })
+    checkbox.checked = allChecked;
+}
+
+function checkYears() {
+    let checkbox = document.getElementById("all_year")
+    let years = document.getElementsByName("years")
+    years.forEach(function (year) {
+        year.checked = checkbox.checked
+    })
+}
+
+function updateCheckedYears() {
+    let allChecked = true
+    let checkbox = document.getElementById("all_year")
+    let years = document.getElementsByName("years")
+    years.forEach(function (year) {
+        if (year.checked === false) {
+            allChecked = false;
+        }
+    })
+    checkbox.checked = allChecked;
+}
+
+function checkMonths() {
+    let checkbox = document.getElementById("all_months")
+    let months = document.getElementsByName("months")
+    months.forEach(function (month) {
+        month.checked = checkbox.checked
+    })
+}
+
+function updateCheckedMonths() {
+    let allChecked = true
+    let checkbox = document.getElementById("all_months")
+    let months = document.getElementsByName("months")
+    months.forEach(function (month) {
+        if (month.checked === false) {
+            allChecked = false;
+        }
+    })
+    checkbox.checked = allChecked;
+}
+
+function myCancel() {
+    var dialog = document.querySelector("#prompt");
+    dialog.close();
+}

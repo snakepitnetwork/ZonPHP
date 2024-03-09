@@ -1,5 +1,5 @@
 <?php
-global $params, $colors;
+global $params, $colors, $month_local;
 include_once "../inc/init.php";
 include_once ROOT_DIR . "/inc/connect.php";
 
@@ -74,15 +74,12 @@ $corners = 'border-bottom-left-radius: 0px !important; border-bottom-right-radiu
             <script> // fills the empty dropdown on first load
                 $(document).ready(function () {
                     $('.selectpicker').selectpicker('toggle');
+                    updateCheckedYears();
+                    updateCheckedMonths();
                 });
             </script>
             <script>
                 let sort = "<?= $sort ?>";
-
-                function myPrompt(text, O, cancel, defaultValue) {
-                    let dialog = document.querySelector("#prompt");
-                    dialog.show();
-                }
 
                 function myOK() {
                     let months = document.getElementsByName("months")
@@ -104,11 +101,6 @@ $corners = 'border-bottom-left-radius: 0px !important; border-bottom-right-radiu
                         "&inverters=" + visibleInverters +
                         "&months=" + stripLastChar(selectedMonths) +
                         "&years=" + stripLastChar(selectedYears);
-                }
-
-                function myCancel() {
-                    var dialog = document.querySelector("#prompt");
-                    dialog.close();
                 }
 
                 function toggleText() {
@@ -160,9 +152,21 @@ $corners = 'border-bottom-left-radius: 0px !important; border-bottom-right-radiu
                     <tbody>
                     <tr>
                         <td>
+                            <input type='checkbox' id='all_months' name='all_months' value='all_months'
+                                   onclick="checkMonths()">
+                            <label for='all_months'> <?= getTxt("all") ?></label><br>
+                        </td>
+                        <td>
+                            <input type='checkbox' id='all_year' name='all_years' value='all_year'
+                                   onclick="checkYears()">
+                            <label for='all_year'> <?= getTxt("all") ?></label><br>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
                             <?php
                             for ($k = 1; $k <= count($month_local); $k++) {
-                                echo "<input type='checkbox' id='$k' name='months' value='$k'" . getIsCheckedString($k, $selectedMonths) . ">";
+                                echo "<input type='checkbox' id='$k' name='months' value='$k'" . getIsCheckedString($k, $selectedMonths) . " onclick='updateCheckedMonths()'> ";
                                 echo "<label for='$k'>" . $month_local[$k]['MMMM'] . "</label><br>";
                             }
                             ?>
@@ -170,8 +174,8 @@ $corners = 'border-bottom-left-radius: 0px !important; border-bottom-right-radiu
                         <td>
                             <?php
                             foreach ($years as $item) {
-                                echo "<input type='checkbox' id='$item' name='years' value='$item'" . getIsCheckedString($item, $selectedYears) . ">";
-                                echo "<label for='$item'>" . $item . "</label><br>";
+                                echo "<input type='checkbox' id='$item' name='years' value='$item' " . getIsCheckedString($item, $selectedYears) . "  onclick='updateCheckedYears()'> ";
+                                echo "<label for='$item'> " . $item . "</label><br>";
                             }
                             ?>
                         </td>

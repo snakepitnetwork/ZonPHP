@@ -27,10 +27,7 @@ $corners = 'border-bottom-left-radius: 0px !important; border-bottom-right-radiu
             </div>
         </div>
         <script>
-            function myPrompt(text, O, cancel, defaultValue) {
-                let dialog = document.querySelector("#prompt");
-                dialog.show();
-            }
+
             function myOK() {
                 let inverters = document.getElementsByName("inverters")
                 selectedInverters = "";
@@ -52,12 +49,16 @@ $corners = 'border-bottom-left-radius: 0px !important; border-bottom-right-radiu
                     "&years=" + stripLastChar(selectedYears);
             }
 
-            function myCancel() {
-                var dialog = document.querySelector("#prompt");
-                dialog.close();
-            }
+
         </script>
         <dialog id="prompt" role="dialog" aria-labelledby="prompt-dialog-heading">
+            <script>
+                $(document).ready(function () {
+                    updateCheckedYears();
+                    updateCheckedInverters();
+                });
+            </script>
+
             <h2 id="prompt-dialog-heading"><?= getTxt("filter"); ?></h2>
             <div class="table_component">
                 <table>
@@ -70,18 +71,30 @@ $corners = 'border-bottom-left-radius: 0px !important; border-bottom-right-radiu
                     <tbody>
                     <tr>
                         <td>
+                            <input type='checkbox' id='all_inverter' name='all_inverters' value='all_inverter'
+                                   onclick="checkInverters()">
+                            <label for='all_inverter'> <?= getTxt("all") ?></label><br>
+                        </td>
+                        <td>
+                            <input type='checkbox' id='all_year' name='all_years' value='all_year'
+                                   onclick="checkYears()">
+                            <label for='all_year'> <?= getTxt("all") ?></label><br>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
                             <?php
                             foreach (PLANT_NAMES as $inverter) {
-                                echo "<input type='checkbox' id='$inverter' name='inverters' value='$inverter'" . getIsCheckedString($inverter, $visibleInvertersArray) . ">";
-                                echo "<label for='$inverter'>" .$inverter . "</label><br>";
+                                echo "<input type='checkbox' id='$inverter' name='inverters' value='$inverter'" . getIsCheckedString($inverter, $visibleInvertersArray) . " onclick='updateCheckedInverters()' >";
+                                echo "<label for='$inverter'>" . $inverter . "</label><br>";
                             }
                             ?>
                         </td>
                         <td>
                             <?php
                             foreach ($years as $year) {
-                                echo "<input type='checkbox' id='$year' name='years' value='$year'" . getIsCheckedString($year, $selectedYears) . ">";
-                                echo "<label for='$year'>" . $year . "</label><br>";
+                                echo "<input type='checkbox' id='$year' name='years' value='$year'" . getIsCheckedString($year, $selectedYears) . " onclick='updateCheckedYears()' >";
+                                echo "<label for='$year'> " . $year . "</label><br>";
                             }
                             ?>
                         </td>
@@ -91,7 +104,8 @@ $corners = 'border-bottom-left-radius: 0px !important; border-bottom-right-radiu
             </div>
             <br>
             <p class="button-row">
-                <button class="p-1 btn btn-zonphp" name="cancel" onclick="myCancel()"><?= getTxt("cancel"); ?></button> &nbsp; &nbsp;
+                <button class="p-1 btn btn-zonphp" name="cancel" onclick="myCancel()"><?= getTxt("cancel"); ?></button>
+                &nbsp; &nbsp;
                 <button class="p-1 btn btn-zonphp" name="ok" onclick="myOK()"><?= getTxt("ok"); ?></button>
             </p>
         </dialog>

@@ -49,15 +49,14 @@ $whereInClause = " where naam in ($visibleInvertersString)";
 if (isset($_GET['months']) && $_GET['months'] != "undefined" && $_GET['months'] != "") {
     $selectedMonths = explode(',', $_GET['months']);
 } else {
-    $selectedMonths = array();
+    $selectedMonths = explode(',', $whereInMonth);
 }
 
 if (isset($_GET['years']) && $_GET['years'] != "undefined" && $_GET['years'] != "") {
     $selectedYears = explode(",", $_GET['years']);
 } else {
-    $selectedYears = array();
+    $selectedYears = $years;
 }
-
 
 $sql = "SELECT db1.*
 FROM " . TABLE_PREFIX . "_maand AS db1

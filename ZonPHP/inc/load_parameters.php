@@ -16,7 +16,7 @@ function loadParams($htmlpath): array
     vadidateParams($params);
     $_SESSION['params'] = $params;
     if ($params['check']['failed']) {
-        header('location:$htmlpath' . $htmlpath . 'pages/validate.php');
+        header('location:$htmlpath' . $htmlpath . 'validate.php');
     }
     return $params;
 }

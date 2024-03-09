@@ -104,7 +104,7 @@ if ($params['debugMenu'] == "never") {
                            href="<?= HTML_PATH ?>inc/destroy.php"><?= getTxt("clearsession") ?> </a>
                     </li>
                     <li><a class="dropdown-item"
-                           href="<?= HTML_PATH ?>pages/validate.php"><?= getTxt("validateparams") ?> </a>
+                           href="<?= HTML_PATH ?>validate.php"><?= getTxt("validateparams") ?> </a>
                     </li>
                     <?php
                     if (strlen($new_version_label) > 0) {
