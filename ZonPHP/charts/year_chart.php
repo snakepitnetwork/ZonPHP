@@ -192,7 +192,7 @@ $strdataseries .= " {
 // average
 $strdataseries .= " {
                     datasetId: 'avg', 
-                    label: '" . getTxt("gem") . "', 
+                    label: '" . getTxt("average") . "', 
                     type: 'line',      
                     stack: 'Stack 1',                                                                 
                     data: [" . buildConstantDataString($sumAverage, 12) . "],

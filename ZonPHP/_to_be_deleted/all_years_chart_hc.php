@@ -175,7 +175,7 @@ include_once "chart_styles.php";
         var ref = <?= round($params['totalExpectedYield']); ?>;
         var years = <?= $yearcount ?>;
         var myoptions = <?= $chart_options ?>;
-        var txt_gem = '<?= getTxt("gem") ?>';
+        var txt_gem = '<?= getTxt("average") ?>';
         var avg = <?= json_encode($avg_data, JSON_NUMERIC_CHECK) ?>;
         var ref = <?= json_encode($params['expectedYield'], JSON_NUMERIC_CHECK) ?>;
         var mychart = new Highcharts.Chart('total_chart', Highcharts.merge(myoptions, {

@@ -17,7 +17,7 @@ $corners = 'border-bottom-left-radius: 0px !important; border-bottom-right-radiu
         </div>
         <div id="chart_header" class="<?= HEADER_CLASS ?>">
             <h2>
-                <?= getTxt("chart_cumulativeoverview") ?>
+                <?= getTxt("chart_years_cumulative_view") ?>
             </h2>
             <div class="inner" id="filter" style="z-index: 999 !important; position:relative">
                 <a onclick="myPrompt()" class="p-1 btn btn-zonphp" data-bs-toggle="collapse"
@@ -29,24 +29,9 @@ $corners = 'border-bottom-left-radius: 0px !important; border-bottom-right-radiu
         <script>
 
             function myOK() {
-                let inverters = document.getElementsByName("inverters")
-                selectedInverters = "";
-                inverters.forEach(function (inverter) {
-                    if (inverter.checked) {
-                        selectedInverters = selectedInverters + inverter.value + ","
-                    }
-                })
-                let years = document.getElementsByName("years")
-                let selectedYears = "";
-                years.forEach(function (year) {
-                    if (year.checked) {
-                        selectedYears = selectedYears + year.value + ","
-                    }
-                })
-
                 window.location.href =
-                    "?inverters=" + selectedInverters +
-                    "&years=" + stripLastChar(selectedYears);
+                    "?inverters=" + getSelectedInverters() +
+                    "&years=" + getSelectedYears();
             }
 
 
@@ -65,7 +50,7 @@ $corners = 'border-bottom-left-radius: 0px !important; border-bottom-right-radiu
                     <thead>
                     <tr>
                         <th><?= getTxt("inverter"); ?></th>
-                        <th><?= getTxt("jaar"); ?></th>
+                        <th><?= getTxt("year"); ?></th>
                     </tr>
                     </thead>
                     <tbody>

@@ -1,5 +1,5 @@
 <?php
-global $params, $colors, $month_local;
+global $params, $colors, $month_local, $visibleInvertersJS, $years;
 include_once "../inc/init.php";
 include_once ROOT_DIR . "/inc/connect.php";
 
@@ -22,42 +22,8 @@ $corners = 'border-bottom-left-radius: 0px !important; border-bottom-right-radiu
             <?php include_once ROOT_DIR . "/inc/topmenu.php"; ?>
         </div>
         <div id="chart_header" class="<?= HEADER_CLASS ?>" style=" align-content: center; ">
-            <h2><?= getTxt("chart_31days"); ?></h2>
+            <h2><?= getTxt("ranking"); ?></h2>
             <div class="block2">
-                <div class="inner" id="Months"
-                     style="z-index: 999 !important; vertical-align: bottom !important; position:relative">
-                    <select id="month_selection" name="roles" class="selectpicker show-tick"
-                            title="<?= getTxt("maand"); ?>"
-                            multiple="multiple"
-                            data-width="fit"
-                            data-selected-text-format="static"
-                            data-count-selected-text="{0} <?= getTxt("maand_sel"); ?>">
-                        <?php
-                        $option = "";
-                        for ($k = 1; $k <= count($month_local); $k++) {
-                            $option .= "<option value=" . $k . "" . getIsSelectedString($k, $selectedMonths) . ">" . $month_local[$k]['MMMM'] . "</option>";
-                        }
-                        echo $option;
-                        ?>
-
-                    </select>
-                </div>
-                <div class="inner" id="Years"
-                     style="z-index: 999 !important; position:relative; font-size: 13px !important; color:red;">
-                    <select id="year_selection" name="roles" class="selectpicker show-tick"
-                            title="<?= getTxt("jaar") ?>"
-                            text-align="center"
-                            multiple="multiple"
-                            data-width="fit"
-                            data-selected-text-format="static"
-                            data-count-selected-text="{0} <?= getTxt("jaar_sel"); ?>">
-                        <?php
-                        foreach ($years as $item) {
-                            echo "<option value='$item' " . getIsSelectedString($item, $selectedYears) . ">$item</option>";
-                        }
-                        ?>
-                    </select>
-                </div>
                 <div class="inner" id="Sort" style="z-index: 999 !important; position:relative">
                     <a onclick="toggleText()" class="p-1 btn btn-zonphp" data-bs-toggle="collapse"
                        id="toggle" href="#hiddenContent" role="button" aria-expanded="false"
@@ -71,7 +37,7 @@ $corners = 'border-bottom-left-radius: 0px !important; border-bottom-right-radiu
                        style="border-top-width: 1px; border-bottom-width: 1px; height: 27px;  vertical-align: top; "><?= getTxt("filter"); ?></a>
                 </div>
             </div>
-            <script> // fills the empty dropdown on first load
+            <script>
                 $(document).ready(function () {
                     $('.selectpicker').selectpicker('toggle');
                     updateCheckedYears();
@@ -82,61 +48,27 @@ $corners = 'border-bottom-left-radius: 0px !important; border-bottom-right-radiu
                 let sort = "<?= $sort ?>";
 
                 function myOK() {
-                    let months = document.getElementsByName("months")
-                    selectedMonths = "";
-                    months.forEach(function (month) {
-                        if (month.checked) {
-                            selectedMonths = selectedMonths + month.value + ","
-                        }
-                    })
-                    let years = document.getElementsByName("years")
-                    let selectedYears = "";
-                    years.forEach(function (year) {
-                        if (year.checked) {
-                            selectedYears = selectedYears + year.value + ","
-                        }
-                    })
-                    const visibleInverters = "<?= $visibleInvertersJS ?>";
                     window.location.href = "?sort=" + sort +
-                        "&inverters=" + visibleInverters +
-                        "&months=" + stripLastChar(selectedMonths) +
-                        "&years=" + stripLastChar(selectedYears);
+                        "&inverters=" + "<?= $visibleInvertersJS ?>" +
+                        "&months=" + getSelectedMonths() +
+                        "&years=" + getSelectedYears();
                 }
 
                 function toggleText() {
                     let x = document.getElementById("toggle");
                     if (sort === "desc") {
                         x.innerHTML = "<?= getTxt("asc"); ?>";
-                        // x.innerHTML = "⬇︎";
                         sort = "asc";
                     } else {
                         x.innerHTML = "<?= getTxt("desc"); ?>";
-                        // x.innerHTML = "⬆︎";
                         sort = "desc";
                     }
-                    const selectedMonths = $('#month_selection').val().join(',');
-                    const selectedYears = $('#year_selection').val().join(',');
-                    const visibleInverters = "<?= $visibleInvertersJS ?>";
+
                     window.location.href = "?sort=" + sort +
-                        "&inverters=" + visibleInverters +
-                        "&months=" + selectedMonths +
-                        "&years=" + selectedYears;
+                        "&inverters=" + "<?= $visibleInvertersJS ?>" +
+                        "&months=" + getSelectedMonths() +
+                        "&years=" + getSelectedYears();
                 }
-
-                $.fn.selectpicker.Constructor.BootstrapVersion = '5';
-                $.fn.selectpicker.defaults = {template: {caret: ''}};
-
-                $('.selectpicker').selectpicker({iconBase: 'fa', tickIcon: 'fa-check', style: 'btn btn-zonphp'});
-                $('.selectpicker').change(function () {
-                    const selectedMonths = $('#month_selection').val().join(',');
-                    const selectedYears = $('#year_selection').val().join(',');
-                    const visibleInverters = "<?= $visibleInvertersJS ?>";
-                    window.location.href = "?sort=" + sort +
-                        "&inverters=" + visibleInverters +
-                        "&months=" + selectedMonths +
-                        "&years=" + selectedYears;
-                })
-
             </script>
         </div><!--.chart_header-->
         <dialog id="prompt" role="dialog" aria-labelledby="prompt-dialog-heading">
@@ -145,8 +77,8 @@ $corners = 'border-bottom-left-radius: 0px !important; border-bottom-right-radiu
                 <table>
                     <thead>
                     <tr>
-                        <th><?= getTxt("maand"); ?></th>
-                        <th><?= getTxt("jaar"); ?></th>
+                        <th><?= getTxt("month"); ?></th>
+                        <th><?= getTxt("year"); ?></th>
                     </tr>
                     </thead>
                     <tbody>

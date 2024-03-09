@@ -146,7 +146,7 @@ foreach ($inveter_list as $inverter_name) {
 // average
 $strdataseries .= " {
                     datasetId: 'avg', 
-                    label: '" . getTxt("gem") . "', 
+                    label: '" . getTxt("average") . "', 
                     type: 'line',      
                     stack: 'Stack 1',                                                                 
                     data: [" . buildConstantDataString($sumAverage, count($sum_per_year)) . "],

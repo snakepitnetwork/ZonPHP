@@ -180,3 +180,36 @@ function myCancel() {
     var dialog = document.querySelector("#prompt");
     dialog.close();
 }
+
+function getSelectedMonths() {
+    let months = document.getElementsByName("months")
+    let selectedMonths = "";
+    months.forEach(function (month) {
+        if (month.checked) {
+            selectedMonths = selectedMonths + month.value + ","
+        }
+    })
+    return stripLastChar(selectedMonths)
+}
+
+function getSelectedYears() {
+    let years = document.getElementsByName("years")
+    let selectedYears = "";
+    years.forEach(function (year) {
+        if (year.checked) {
+            selectedYears = selectedYears + year.value + ","
+        }
+    })
+    return stripLastChar(selectedYears)
+}
+
+function getSelectedInverters() {
+    let inverters = document.getElementsByName("inverters")
+    let selectedInverters = "";
+    inverters.forEach(function (inverter) {
+        if (inverter.checked) {
+            selectedInverters = selectedInverters + inverter.value + ","
+        }
+    })
+    return stripLastChar(selectedInverters)
+}

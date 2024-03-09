@@ -9,7 +9,7 @@ if ($_SESSION['STARTDATE'] == NODATE) {
 $aoplopendkwdag[] = 0;
 include_once "inc/header.php";
 
-$daytext = getTxt("chart_dayoverview");
+$daytext = getTxt("chart_day_view");
 if ($params['useWeewx']) {
     $daytext = getTxt("chart_solar_temp");
 }
@@ -22,6 +22,7 @@ if (isset($_GET['date'])) {
 $_SESSION['CHARTDATE'] = $chartdate;
 
 ?>
+
 <script src="https://jqwidgets.com/public/jqwidgets/jqxcore.js"></script>
 <script src="https://jqwidgets.com/public/jqwidgets/jqxscrollbar.js"></script>
 <script src="https://jqwidgets.com/public/jqwidgets/jqxbuttons.js"></script>

@@ -23,30 +23,30 @@ if ($params['debugMenu'] == "never") {
                     </li>
                     <li>
                         <a class="dropdown-item"
-                           href="<?= HTML_PATH ?>pages/day.php"><?= getTxt("chart_dayoverview") ?></a>
+                           href="<?= HTML_PATH ?>pages/day.php"><?= getTxt("chart_day_view") ?></a>
                     </li>
                     <li>
                         <a class="dropdown-item"
-                           href="<?= HTML_PATH ?>pages/month.php"><?= getTxt("chart_monthoverview") ?></a>
+                           href="<?= HTML_PATH ?>pages/month.php"><?= getTxt("chart_month_view") ?></a>
                     </li>
                     <li>
                         <a class="dropdown-item"
-                           href="<?= HTML_PATH ?>pages/year.php"><?= getTxt("chart_yearoverview") ?></a>
+                           href="<?= HTML_PATH ?>pages/year.php"><?= getTxt("chart_year_view") ?></a>
                     </li>
                     <li>
                         <a class="dropdown-item"
-                           href="<?= HTML_PATH ?>pages/years.php"><?= getTxt("chart_allyearoverview") ?></a>
+                           href="<?= HTML_PATH ?>pages/years.php"><?= getTxt("chart_years_view") ?></a>
                     </li>
                     <li>
                         <a class="dropdown-item"
-                           href="<?= HTML_PATH ?>pages/months.php"><?= getTxt("chart_lastyearoverview") ?></a>
+                           href="<?= HTML_PATH ?>pages/months.php"><?= getTxt("chart_months_view") ?></a>
                     </li>
                     <li>
                         <a class="dropdown-item"
-                           href="<?= HTML_PATH ?>pages/years_cumulative.php"><?= getTxt("chart_cumulativeoverview") ?></a>
+                           href="<?= HTML_PATH ?>pages/years_cumulative.php"><?= getTxt("chart_years_cumulative_view") ?></a>
                     </li>
                     <li><a class="dropdown-item"
-                           href="<?= HTML_PATH ?>pages/ranking.php"><?= getTxt("chart_31days") ?></a>
+                           href="<?= HTML_PATH ?>pages/ranking.php"><?= getTxt("ranking") ?></a>
                     </li>
                 </ul>
 

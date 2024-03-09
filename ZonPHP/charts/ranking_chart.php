@@ -4,7 +4,6 @@ include_once "../inc/init.php";
 include_once ROOT_DIR . "/inc/connect.php";
 include_once ROOT_DIR . "/charts/chart_support.php";
 
-$showTopFlop = "top31_chart";
 $isIndexPage = false;
 
 if (isset($_POST['action']) && ($_POST['action'] == "indexpage")) {
@@ -135,20 +134,22 @@ foreach (PLANT_NAMES as $key => $inverter_name) {
     $strdata = "";
 }
 
-$id = $showTopFlop;
-$show_legende = "true";
-if ($isIndexPage) {
-    echo '<div class = "index_chart" id="' . $id . '">
-            <canvas id="day_ranking_chart_canvas"></canvas>
-         </div>';
-    $show_legende = "false";
-}
-
 $legendMonth = "";
 foreach ($selectedMonths as $key) {
     $legendMonth .= $month_local[$key]["MMM"] . ", ";
 }
 $legendMonth = strip($legendMonth);
+
+$show_legende = "true";
+if ($isIndexPage) {
+    echo '<div class = "index_chart" id="ranking">
+            <canvas id="day_ranking_chart_canvas"></canvas>
+         </div>';
+    $show_legende = "false";
+    $subtitle = "['']";
+} else {
+    $subtitle = "['" . implode(", ", $selectedYears) . "', '" . $legendMonth . "']";
+}
 
 ?>
 
@@ -238,7 +239,7 @@ $legendMonth = strip($legendMonth);
                         },
                         subtitle: {
                             display: true,
-                            text: ['<?= implode(", ", $selectedYears)?>', '<?=$legendMonth?>'],
+                            text: <?= $subtitle ?>,
                         },
                     },
                     onClick: (event, elements, chart) => {

@@ -26,7 +26,7 @@ $corners = 'border-bottom-left-radius: 0px !important; border-bottom-right-radiu
         <div id="chart_header" class="<?= HEADER_CLASS ?>" style="display: grid; align-content: center; ">
             <h2>
                 <?php
-                echo getTxt("chart_lastyearoverview");
+                echo getTxt("chart_months_view");
                 ?>
             </h2>
         </div>

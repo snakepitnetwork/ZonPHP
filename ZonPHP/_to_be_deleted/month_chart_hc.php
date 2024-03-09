@@ -165,7 +165,7 @@ include_once "chart_styles.php";
         var khhWp = <?= json_encode($params['PLANTS_KWP']) ?>;
         var nmbr = khhWp.length //misused to get the inverter count
         var txt_max = '<?= getTxt("max") ?>';
-        var txt_gem = '<?= getTxt("gem") ?>';
+        var txt_gem = '<?= getTxt("average") ?>';
         var txt_ref = '<?= getTxt("ref") ?>';
         var gem2;
         var totamth = 0;

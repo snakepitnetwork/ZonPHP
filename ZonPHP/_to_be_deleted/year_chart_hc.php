@@ -197,7 +197,7 @@ $categories = $shortmonthcategories;
         var totayr = 0;
         var avg = <?= json_encode($avg_data, JSON_NUMERIC_CHECK) ?>;
         var ref = <?= json_encode($expectedYield, JSON_NUMERIC_CHECK) ?>;
-        var txt_gem = '<?= getTxt("gem") ?>';
+        var txt_gem = '<?= getTxt("average") ?>';
         var mychart = new Highcharts.Chart('year_chart', Highcharts.merge(myoptions, {
 
             chart: {

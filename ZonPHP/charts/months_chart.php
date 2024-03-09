@@ -267,7 +267,7 @@ $strdataseries .= " {
 $strdataseries .= "{
                     order: 0,    
                     datasetId: 'avg', 
-                    label: '" . getTxt("gem") . "',                      
+                    label: '" . getTxt("average") . "',                      
                     type: 'line',         
                     radius:function(context) { 
                        let width = 12;                                
