@@ -321,7 +321,7 @@ function load_charts() {
             '   <div class="item-content card" style="background-color: ' + theme['color_chartbackground'] + ';"> ' +
             '      <div id="chart_header" class="' + headerclass + '">' + txt["card_farm_information"] + '</div>' +
             '      <div class="index_chart" id="' + id + '" ">' +
-            '          <div class="highcharts-container" >' +
+            '          <div class="chart-container" >' +
             '             <br>' +
             '             <h1>' + farm['name'] + '</h1>' +
             '             <br>' +
@@ -349,7 +349,7 @@ function load_charts() {
                 '   <div class="item-content card" style="background-color: ' + theme['color_chartbackground'] + ';"> ' +
                 '      <div id="chart_header" class="' + headerclass + '">' + txt['plant'] + ' - ' + key + '</div>' +
                 '      <div class="index_chart" id="' + id + '" ">' +
-                '          <div class="highcharts-container" >' +
+                '          <div class="chart-container" >' +
                 '                 <br>' +
                 '                 ' + plants[key]['description'] + '<br>' +
                 '          </div>' +
@@ -376,7 +376,7 @@ function load_charts() {
                 '   <div class="item-content card" style="background-color: ' + theme['color_chartbackground'] + ';"> ' +
                 '      <div id="chart_header" class="' + headerclass + '">' + images[key]['title'] + '</div>' +
                 '      <div class="index_chart" id="' + "chart_" + id + '">' +
-                '         <div class="highcharts-container" >' +
+                '         <div class="chart-container" >' +
                 '            <br><p>' + images[key]['description'] + '</p> ' +
                 '            <div>' +
                 '               <img class="index-image" id="' + id + '" onclick="showModalImage(\'' + id + '\')" src="' + uri + '" alt="' + images[key]['title'] + '" width="400" height="300"> ' +

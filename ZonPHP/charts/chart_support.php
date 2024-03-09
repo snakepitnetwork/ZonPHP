@@ -42,11 +42,13 @@ function buildConstantDataString($value, $count): string
     return $out;
 }
 
-// strips last char from trimmed string
+// strips last "," from trimmed string
 function strip($value): string
 {
     $out = trim($value);
-    $out = substr($out, 0, -1);
+    if (strlen($out) > 0 && substr($out, -1) == ",") {
+        $out = substr($out, 0, -1);
+    }
     return $out;
 }
 

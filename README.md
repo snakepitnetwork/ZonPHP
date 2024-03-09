@@ -7,7 +7,7 @@ on mobiles and tablets as well.
 
 ![index.png](resources%2Findex.png)
 
-I replaced all charts with new JavaScript charts using http://www.highcharts.com/ 
+I replaced all charts with new JavaScript charts using https://www.chartjs.org/
 and refactored the PHP code to support PHP8.
 
 If you have any feedback or questions, please contact me at https://github.com/seehase/ZonPHP/issues

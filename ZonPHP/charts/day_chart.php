@@ -55,7 +55,7 @@ if (mysqli_num_rows($result) == 0) {
     }
 }
 // get best day for current month (max value over all years for current month)
-// Highcharts will calculate the max kWh
+// Charts will calculate the max kWh
 // todo: filter on active plants with e.g. naam in ("SEEHASE", "TILLY") for safety
 $sqlmaxdag = "
 SELECT Datum_Maand, sum(Geg_Maand) as sum FROM " . TABLE_PREFIX . "_maand WHERE MONTH(Datum_Maand)='" . date('m', $chartdate) . "' " . " GROUP BY Datum_maand ORDER BY `sum` DESC limit 1";
