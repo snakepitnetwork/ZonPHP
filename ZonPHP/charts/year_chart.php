@@ -271,7 +271,7 @@ if ($isIndexPage) {
 }
 
 
-$subtitle = getTxt("totaal") . ": $totalYear kWh";
+$subtitle = getTxt("total") . ": $totalYear kWh";
 
 ?>
 
@@ -298,6 +298,15 @@ $subtitle = getTxt("totaal") . ": $totalYear kWh";
                         y: {
                             stacked: true,
                             beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '<?= getTxt("month") ?> (kWh)'
+                            },
+                            ticks: {
+                                callback: function (value, index, ticks) {
+                                    return value
+                                }
+                            },
                         },
                         'x-axis-lines': {
                             offset: false,
@@ -317,6 +326,15 @@ $subtitle = getTxt("totaal") . ": $totalYear kWh";
                                 drawOnChartArea: false, // only want the grid lines for one axis to show up
                             },
                             stacked: true,
+                            title: {
+                                display: true,
+                                text: '<?= getTxt("total") ?> (kWh)'
+                            },
+                            ticks: {
+                                callback: function (value, index, ticks) {
+                                    return value.toFixed(0)
+                                }
+                            },
                         },
                         maxbar: {
                             offset: true,
@@ -338,6 +356,7 @@ $subtitle = getTxt("totaal") . ": $totalYear kWh";
                         subtitle: {
                             display: true,
                             text: '<?= $subtitle ?>',
+                            padding: {top: 5, left: 0, right: 0, bottom: 3},
                         },
                     },
                     onClick: (event, elements, chart) => {

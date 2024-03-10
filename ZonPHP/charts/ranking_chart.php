@@ -112,6 +112,7 @@ foreach (PLANT_NAMES as $key => $inverter_name) {
                     type: 'bar',                               
                     stack: 'Stack 0',
                     borderWidth: 1,
+                    myColor: " . $myColor2 . ",
                     data: [" . $strdata . "],                    
                     dataCUM: [],
                     dataMAX: [], 
@@ -209,6 +210,16 @@ if ($isIndexPage) {
                         y: {
                             stacked: true,
                             beginAtZero: true,
+                            stacked: true,
+                            title: {
+                                display: true,
+                                text: '<?= getTxt("total") ?> (kWh)'
+                            },
+                            ticks: {
+                                callback: function (value, index, ticks) {
+                                    return (value).toFixed(0)
+                                }
+                            },
                         },
                     },
                     plugins: {
@@ -229,7 +240,9 @@ if ($isIndexPage) {
                                             {
                                                 datasetIndex: idx,
                                                 text: inverter,
-                                                hidden: vis
+                                                hidden: vis,
+                                                fillStyle: chart.data.datasets[idx].myColor,
+                                                strokeStyle: chart.data.datasets[idx].myColor,
                                             })
                                     })
                                     return items
@@ -240,6 +253,7 @@ if ($isIndexPage) {
                         subtitle: {
                             display: true,
                             text: <?= $subtitle ?>,
+                            padding: {top: 5, left: 0, right: 0, bottom: 3},
                         },
                     },
                     onClick: (event, elements, chart) => {

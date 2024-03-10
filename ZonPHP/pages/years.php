@@ -4,10 +4,6 @@ include_once "../inc/init.php";
 include_once ROOT_DIR . "/inc/connect.php";
 include_once ROOT_DIR . "/inc/header.php";
 include_once "../charts/years_chart.php";
-// force reload caches
-if (isset($_SESSION['lastupdate'])) {
-    $_SESSION['lastupdate'] = 0;
-}
 
 $footer_display_style = "clear:both; ";
 $padding = '- 0px';

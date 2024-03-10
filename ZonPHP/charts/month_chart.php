@@ -251,7 +251,7 @@ if ($isIndexPage) {
 }
 $monthTotal = round($monthTotal, 2);
 
-$subtitle = getTxt("totaal") . ": $monthTotal kWh";
+$subtitle = getTxt("total") . ": $monthTotal kWh";
 
 
 ?>
@@ -276,7 +276,16 @@ $subtitle = getTxt("totaal") . ": $monthTotal kWh";
                             stacked: true,
                         },
                         y: {
-                            stacked: true
+                            stacked: true,
+                            title: {
+                                display: true,
+                                text: '<?= getTxt("day") ?> (kWh)'
+                            },
+                            ticks: {
+                                callback: function (value, index, ticks) {
+                                    return value
+                                }
+                            }
                         },
                         x1: {
                             offset: false,
@@ -290,6 +299,15 @@ $subtitle = getTxt("totaal") . ": $monthTotal kWh";
                             // grid line settings
                             grid: {
                                 drawOnChartArea: false, // only want the grid lines for one axis to show up
+                            },
+                            title: {
+                                display: true,
+                                text: '<?= getTxt("total") ?> (kWh)'
+                            },
+                            ticks: {
+                                callback: function (value, index, ticks) {
+                                    return value
+                                }
                             },
                             stacked: true,
                         },
@@ -309,6 +327,7 @@ $subtitle = getTxt("totaal") . ": $monthTotal kWh";
                         subtitle: {
                             display: true,
                             text: '<?= $subtitle ?>',
+                            padding: {top: 5, left: 0, right: 0, bottom: 3},
                         },
                     },
                     onClick: (event, elements, chart) => {

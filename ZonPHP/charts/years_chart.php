@@ -204,7 +204,7 @@ if ($isIndexPage) {
     $show_legende = "false";
 }
 
-$subtitle = getTxt("totaal") . ": " . round($total_sum_for_all_years, 0) . " kWh";
+$subtitle = getTxt("total") . ": " . round($total_sum_for_all_years, 0) . " kWh";
 
 ?>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -226,7 +226,16 @@ $subtitle = getTxt("totaal") . ": " . round($total_sum_for_all_years, 0) . " kWh
                             stacked: true,
                         },
                         y: {
-                            stacked: true
+                            stacked: true,
+                            title: {
+                                display: true,
+                                text: '<?= getTxt("year") ?> (MWh)'
+                            },
+                            ticks: {
+                                callback: function (value, index, ticks) {
+                                    return (value/1000).toFixed(0)
+                                }
+                            },
                         },
                         y1: {
                             type: 'linear',
@@ -238,6 +247,15 @@ $subtitle = getTxt("totaal") . ": " . round($total_sum_for_all_years, 0) . " kWh
                                 drawOnChartArea: false, // only want the grid lines for one axis to show up
                             },
                             stacked: true,
+                            title: {
+                                display: true,
+                                text: '<?= getTxt("total") ?> (MWh)'
+                            },
+                            ticks: {
+                                callback: function (value, index, ticks) {
+                                    return (value/1000).toFixed(0)
+                                }
+                            },
                         },
                     },
                     plugins: {
@@ -255,6 +273,7 @@ $subtitle = getTxt("totaal") . ": " . round($total_sum_for_all_years, 0) . " kWh
                         subtitle: {
                             display: true,
                             text: '<?= $subtitle ?>',
+                            padding: {top: 5, left: 0, right: 0, bottom: 3},
                         },
                     },
                     onClick: (event, elements, chart) => {

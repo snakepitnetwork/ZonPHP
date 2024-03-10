@@ -166,7 +166,7 @@ include_once "chart_styles.php";
             return accumulator + a;
         }
 
-        var txt_total = '<?= getTxt("totaal") ?>';
+        var txt_total = '<?= getTxt("total") ?>';
         var khhWp = <?= json_encode($params['PLANTS_KWP']) ?>;
         var nmbr = khhWp.length //misused to get the inverter count
         var txt_max = '<?= getTxt("max") ?>';

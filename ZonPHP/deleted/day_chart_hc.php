@@ -202,7 +202,7 @@ if (strlen($temp_serie) > 0) {
         var temp_max = <?= $val_max ?>;
         var temp_min = <?= $val_min ?>;
         var txt_today = '<?= getTxt("today") ?>';
-        var txt_totaal = '<?= getTxt("totaal") ?>';
+        var txt_totaal = '<?= getTxt("total") ?>';
         var txt_max = '<?= getTxt("max") ?>';
         var txt_peak = '<?= getTxt("peak") ?>';
         Highcharts.setOptions({

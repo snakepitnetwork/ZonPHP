@@ -8,10 +8,6 @@ $isIndexPage = false;
 if (isset($_POST['action']) && ($_POST['action'] == "indexpage")) {
     $isIndexPage = true;
 }
-$inverter = PLANT_NAMES[0];
-if (isset($_GET['naam'])) {
-    $inverter = $_GET['naam'];
-}
 
 $chartdate = time();
 $chartdatestring = date("Y-m-d", $chartdate);
@@ -29,7 +25,7 @@ $sql = "SELECT MAX( Datum_Maand ) AS maxi, YEAR(Datum_Maand) as year, ROUND(SUM(
 FROM " . TABLE_PREFIX . "_maand 
 GROUP BY  naam, DATE_FORMAT( Datum_Maand,  '%y-%m' ), year
 ORDER BY maxi, naam ASC";
-//echo $sql;
+
 $aTotaaljaar = array();
 $result = mysqli_query($con, $sql) or die("Query failed. alle_jaren: " . mysqli_error($con));
 $adatum[][] = 0;
@@ -89,7 +85,6 @@ if (mysqli_num_rows($resultmax) == 0) {
     while ($row = mysqli_fetch_array($resultmax)) {
         $maxmaand[$row['maand']] = $row['som'];
         $maxPerMonth[$row['maand']][$row['Name']] = Round($row['som']);
-
     }
 }
 ?>
@@ -120,10 +115,11 @@ $colorzz = 0;
 $colori = 1;
 $plantNames = "";
 $lastInverter = "";
-
+$visibleInvertersJS = "";
 foreach (PLANT_NAMES as $idxPlants => $inverter_name) {
     $lastInverter = $inverter_name;
     $plantNames .= "'$inverter_name',";
+    $visibleInvertersJS .= $inverter_name . ",";
     $strdata = "";
     $colorcnt = 0;
     $bdatum = array();
@@ -215,8 +211,7 @@ foreach (PLANT_NAMES as $idxPlants => $inverter_name) {
                     inverter: '" . $inverter_name . "',
                     label: '" . $inverter_name . $year . "_hidden', 
                     type: 'bar',                               
-                    stack: 'Stack-" . $year . "',
-                    borderWidth: 1,
+                    stack: 'Stack-" . $year . "',                    
                     data: [" . $strdata . "],                    
                     dataCUM: [],
                     dataMAX: [], 
@@ -253,8 +248,7 @@ $strdataseries .= " {
                     data: [" . convertValueArrayToDataString($totalsumMaxArray) . "],
                     fill: false,
                     borderColor: '" . $colors['color_chart_max_bar'] . "',
-                    backgroundColor: '" . $colors['color_chart_max_bar'] . "',                   
-                    borderWidth: 1,
+                    backgroundColor: '" . $colors['color_chart_max_bar'] . "',                                       
                     pointStyle: false,   
                     xAxisID: 'maxbar',
                     yAxisID: 'y',
@@ -299,10 +293,10 @@ $strdataseries .= "{
                 },
     ";
 
-$subtitle = "Subtitle is missing";
+$subtitle = strip($visibleInvertersJS);
 $show_legende = "true";
 if ($isIndexPage) {
-    echo '<div class = "index_chart" id="years_chart_' . $inverter . '">
+    echo '<div class = "index_chart" id="years_chart_1">
               <canvas id="last_year_chart_canvas"></canvas>
           </div>';
     $show_legende = "false";
@@ -379,7 +373,17 @@ if ($isIndexPage) {
                             stacked: true,
                         },
                         y: {
-                            stacked: true
+                            stacked: true,
+                            stacked: true,
+                            title: {
+                                display: true,
+                                text: '<?= getTxt("total") ?> (kWh)'
+                            },
+                            ticks: {
+                                callback: function (value, index, ticks) {
+                                    return (value.toFixed(0))
+                                }
+                            },
                         },
                         'maxbar': {
                             offset: true,
@@ -399,7 +403,7 @@ if ($isIndexPage) {
                             position: 'bottom',
                             labels: {
                                 filter: item => !item.text.includes('hidden'),
-                                generateLabels_x: function (chart) {
+                                generateLabels_not_used: function (chart) {
                                     var items = chart.data.inverters.map((l, i) => ({
                                         datasetIndex: 0,
                                         text: l,
@@ -418,6 +422,7 @@ if ($isIndexPage) {
                         subtitle: {
                             display: true,
                             text: '<?= $subtitle ?>',
+                            padding: {top: 5, left: 0, right: 0, bottom: 3},
                         },
                     },
                     onClick: (event, elements, chart) => {

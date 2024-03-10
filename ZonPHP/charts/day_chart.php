@@ -27,7 +27,7 @@ $inveter_list = array();
 $sql = "SELECT SUM( Geg_Dag ) AS gem, naam, Datum_Dag" .
     " FROM " . TABLE_PREFIX . "_dag " .
     " WHERE Datum_Dag LIKE '" . date("Y-m-d", $chartdate) . "%' " .
-    " GROUP BY naam, Datum_Dag " .
+    " GROUP BY Datum_Dag, naam " .
     " ORDER BY Datum_Dag ASC";
 
 $result = mysqli_query($con, $sql) or die("Query failed. dag " . mysqli_error($con));
@@ -70,14 +70,14 @@ if (mysqli_num_rows($resultmaxdag) > 0) {
 $nice_max_date = date("Y-m-d", strtotime($maxdag));
 //query for the best day
 $all_valarraymax = array();
-$sqlmdinv = "SELECT Geg_Dag AS gem, Datum_Dag, Naam AS Name FROM " . TABLE_PREFIX . "_dag WHERE Datum_Dag LIKE  '" .
-    date("Y-m-d", strtotime($maxdag)) . "%' ORDER BY Name, Datum_Dag ASC";
+$sqlmdinv = "SELECT Geg_Dag AS gem, Datum_Dag, Naam FROM " . TABLE_PREFIX . "_dag WHERE Datum_Dag LIKE  '" .
+    date("Y-m-d", strtotime($maxdag)) . "%' ORDER BY Datum_Dag, Naam ASC";
 $resultmd = mysqli_query($con, $sqlmdinv) or die("Query failed. dag-max-dag " . mysqli_error($con));
 $maxdagpeak = 0;
 if (mysqli_num_rows($resultmd) != 0) {
     $maxdagpeak = 0;
     while ($row = mysqli_fetch_array($resultmd)) {
-        $inverter_name = $row['Name'];
+        $inverter_name = $row['Naam'];
         $time_only = substr($row['Datum_Dag'], -9);
 
         $today_max = $chartdatestring . $time_only; // current chart date string + max time
@@ -276,7 +276,7 @@ if (strlen($str_temp_vals) > 0) {
     $show_temp_axis = "true";
     $show_cum_axis = "false";
 }
-$subtitle = getTxt("totaal") . ": $totalDay kWh";
+$subtitle = getTxt("total") . ": $totalDay kWh";
 ?>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -312,12 +312,30 @@ $subtitle = getTxt("totaal") . ": $totalDay kWh";
                             }
                         },
                         y: {
-                            stacked: true
+                            stacked: true,
+                            title: {
+                                display: true,
+                                text: 'Power (kWp)'
+                            },
+                            ticks: {
+                                callback: function(value, index, ticks) {
+                                    return  (value/1000).toFixed(0)
+                                }
+                            }
                         },
                         'y-temperature': {
                             stacked: false,
                             position: 'right',
                             display: <?= $show_temp_axis ?>,
+                            title: {
+                                display: true,
+                                text: '<?= getTxt("temperature") ?> (°C)'
+                            },
+                            ticks: {
+                                callback: function(value, index, ticks) {
+                                    return value + '°C';
+                                }
+                            }
                         },
                         x1: {
                             offset: false,
@@ -351,6 +369,7 @@ $subtitle = getTxt("totaal") . ": $totalDay kWh";
                         subtitle: {
                             display: true,
                             text: '<?= $subtitle ?>',
+                            padding: {top: 5, left: 0, right: 0, bottom: 3},
                         },
                     },
                     onClick: (event, elements, chart) => {

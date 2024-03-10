@@ -179,7 +179,16 @@ $labels = strip($labels);
                             },
                         },
                         y: {
-                            stacked: false
+                            stacked: false,
+                            title: {
+                                display: true,
+                                text: '<?= getTxt("total") ?> (MWh)'
+                            },
+                            ticks: {
+                                callback: function (value, index, ticks) {
+                                    return (value/1000).toFixed(0)
+                                }
+                            },
                         },
                     },
                     plugins: {
@@ -193,6 +202,7 @@ $labels = strip($labels);
                         subtitle: {
                             display: true,
                             text: '<?= $subtitle ?>',
+                            padding: {top: 5, left: 0, right: 0, bottom: 3},
                         },
                     },
                 },
