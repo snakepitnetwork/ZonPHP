@@ -138,13 +138,9 @@ if ($isIndexPage) {
 
 $subtitle = strip($visibleInvertersJS);
 $labels = "";
-for ($i = 1; $i <= 12; $i++) {
-    $labels .= "new Date('$currentYear-$i-01'),";
-}
-$labels = strip($labels);
 ?>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 <script src="<?= HTML_PATH ?>inc/js/chart_support.js"></script>
 <script>
@@ -168,10 +164,10 @@ $labels = strip($labels);
                             beginAtZero: true,
                             type: 'time',
                             time: {
-                                unit: 'hour',
-                                unitStepSize: 1,
+                                unit: 'day',
+
                                 displayFormats: {
-                                    'hour': 'MMM'
+                                    'day': 'MMM'
                                 },
                             },
                             ticks: {

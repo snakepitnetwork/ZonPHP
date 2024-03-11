@@ -207,7 +207,7 @@ if ($isIndexPage) {
 $subtitle = getTxt("total") . ": " . round($total_sum_for_all_years, 0) . " kWh";
 
 ?>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4/dist/chart.umd.min.js"></script>
 <script src="<?= HTML_PATH ?>inc/js/chart_support.js"></script>
 <script>
     $(function () {
