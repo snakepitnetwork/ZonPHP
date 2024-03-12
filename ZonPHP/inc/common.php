@@ -404,6 +404,21 @@ function convertDateTime(string $dateStr): string
     }
 }
 
+function convertToLocalDateTime(string $dateStr, string $dateFormat = "Y-m-d H:i:s"): string
+{
+    global $params;
+    try {
+        $tz_to = $params['timeZone'];
+        $importDateFormat = "Y-m-d H:i:s";
+        $newDateTime = DateTime::createFromFormat($importDateFormat, $dateStr, new DateTimeZone("UTC"));
+        $newDateTime->setTimezone(new DateTimeZone($tz_to));
+        return $newDateTime->format($dateFormat);
+    } catch (Exception $e) {
+        error_log($e);
+        return "";
+    }
+}
+
 function convertLocalDateTime(string $dateStr, string $importDateFormat = "Y-m-d H:i:s", bool $force = false): string
 {
     global $params;

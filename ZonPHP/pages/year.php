@@ -74,18 +74,14 @@ $corners = 'border-bottom-left-radius: 0px !important; border-bottom-right-radiu
             </div>
         </div>
         <div id="year_chart" class="demo"
-             style="width:100%; background-color: <?= $colors['color_chartbackground'] ?>;height:100%; <?= $corners; ?>">
+             style="width:100%; background-color: <?= $colors['color_chartbackground'] ?>; height: <?= BIG_CHART_HIGHT ?>px; <?= $corners; ?>">
             <canvas id="year_chart_canvas"></canvas>
         </div>
         <?php include_once ROOT_DIR . "/inc/footer.php"; ?>
     </div>
     <br>
 </div><!-- closing ".page-content" -->
-<script>
-    $(document).ready(function () {
-        $("#resize ").height(<?= BIG_CHART_HIGHT ?>);
-    });
-</script>
+
 
 </body>
 </html>

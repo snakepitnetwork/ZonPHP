@@ -26,6 +26,10 @@ include_once ROOT_DIR . "/charts/month_chart.php";
             window.open(url, "_self");
             //alert(language);
         });
+
+
+//        $("#resize ").height(<?= BIG_CHART_HIGHT ?>);
+
     });
 </script>
 <?php
@@ -70,7 +74,7 @@ $corners = 'border-bottom-left-radius: 0px !important; border-bottom-right-radiu
                 </div>
             </div>
         </div>
-        <div id="month_chart" style="width:100%; background-color: <?= $colors['color_chartbackground'] ?>; height:100%; <?= $corners; ?>">
+        <div id="month_chart" style="width:100%; height: <?= BIG_CHART_HIGHT ?>px; background-color: <?= $colors['color_chartbackground'] ?>; <?= $corners; ?>">
             <canvas id="month_chart_canvas"></canvas>
         </div>
         <?php include_once ROOT_DIR . "/inc/footer.php"; ?>
@@ -78,9 +82,7 @@ $corners = 'border-bottom-left-radius: 0px !important; border-bottom-right-radiu
     <br>
 </div><!-- closing ".page-content" -->
 <script>
-    $(document).ready(function () {
-        $("#resize ").height(<?= BIG_CHART_HIGHT ?>);
-    });
+
 </script>
 
 </body>

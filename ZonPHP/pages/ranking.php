@@ -122,7 +122,7 @@ $corners = 'border-bottom-left-radius: 0px !important; border-bottom-right-radiu
             </p>
         </dialog>
         <div id="top31_chart"
-             style="width:100%; background-color: <?= $colors['color_chartbackground'] ?>;height:100%; <?= $corners; ?>">
+             style="width:100%; background-color: <?= $colors['color_chartbackground'] ?>; height: <?= BIG_CHART_HIGHT ?>px; <?= $corners; ?>">
             <canvas id="day_ranking_chart_canvas"></canvas>
         </div>
 
@@ -132,10 +132,5 @@ $corners = 'border-bottom-left-radius: 0px !important; border-bottom-right-radiu
         <br>
     </div>
 </div><!-- closing ".page-content" -->
-<script>
-    $(document).ready(function () {
-        $("#resize").height(<?= BIG_CHART_HIGHT ?>);
-    });
-</script>
 </body>
 </html>

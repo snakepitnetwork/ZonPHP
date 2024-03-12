@@ -95,17 +95,12 @@ $corners = 'border-bottom-left-radius: 0px !important; border-bottom-right-radiu
             </p>
         </dialog>
         <div id="universal"
-             style="width:100%; background-color: <?= $colors['color_chartbackground'] ?>;height:100%; <?= $corners; ?>">
+             style="width:100%; background-color: <?= $colors['color_chartbackground'] ?>; height: <?= BIG_CHART_HIGHT ?>px; <?= $corners; ?>">
             <canvas id="cumulative_chart_canvas"></canvas>
         </div>
         <?php include_once ROOT_DIR . "/inc/footer.php"; ?>
     </div>
     <br>
 </div><!-- closing ".page-content" -->
-<script>
-    $(document).ready(function () {
-        $("#resize ").height(<?= BIG_CHART_HIGHT ?>);
-    });
-</script>
 </body>
 </html>

@@ -247,7 +247,7 @@ if (strlen($temp_serie) > 0) {
                                 }
                             }
                         }
-                        SUM = sum.reduce(add, 0);
+                        SUM = sum7200.reduce(add, 0);
                         KWH = kWh.reduce(add, 0);
                         var dataMax = mychart.yAxis[1].dataMax;
                         var AX = peak.filter(Boolean);

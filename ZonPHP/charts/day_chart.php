@@ -90,7 +90,7 @@ if (mysqli_num_rows($resultmd) != 0) {
         }
     }
 }
-
+$nice_last_date = convertToLocalDateTime( $dateTimeUTC,  "H:i");
 // -----------------------------  build data for chart -----------------------------------------------------------------
 
 $strgegmax = "";
@@ -107,6 +107,7 @@ $labels = convertValueArrayToDataString(array_keys($all_valarray));
 // day max line per inverter --------------------------------------------------------------
 $strdatamax = "";
 $cnt = 0;
+$inverterCount = 0;
 $inverterAverage = 0;
 $totalsumCumArray = array();
 
@@ -116,11 +117,12 @@ foreach (PLANT_NAMES as $key => $inverter_name) {
     $strdata = "";
     $cumData = "";
     $cumSum = 0;
+    $inverterCount++;
     foreach ($all_valarray as $time => $valarray) {
         if (!isset($valarray[$inverter_name])) $valarray[$inverter_name] = 0;
         $timeInMillis = $time * 1000;
         $strdata .= '{x:' . $timeInMillis . ', y:' . $valarray[$inverter_name] . '},';
-        $cumSum += $valarray[$inverter_name];
+        $cumSum += ($valarray[$inverter_name] / 12);
         $cumData .= " { x: $timeInMillis, y: $cumSum},";
         if (!isset($totalsumCumArray[$timeInMillis])) {
             $totalsumCumArray[$timeInMillis] = 0.0;
@@ -161,6 +163,7 @@ foreach (PLANT_NAMES as $key => $inverter_name) {
                     xAxisID: 'x',
                     isData: true,
                     order: 10,
+                    legendOrder: " . $inverterCount . ",
                 },
     ";
 
@@ -193,6 +196,7 @@ foreach (PLANT_NAMES as $key => $inverter_name) {
                     xAxisID: 'x',
                     isData: false,
                     order: 1,
+                    legendOrder: " . $inverterCount + 100 . ",
                 },
     ";
 }
@@ -214,6 +218,7 @@ $strdataseries .= " {
                     showLine: true,
                     isData: false,       
                     order: 2,        
+                    legendOrder: " . $inverterCount + 200 . ",
                 },
     ";
 
@@ -276,7 +281,18 @@ if (strlen($str_temp_vals) > 0) {
     $show_temp_axis = "true";
     $show_cum_axis = "false";
 }
-$subtitle = getTxt("total") . ": $totalDay kWh";
+$lastValue = end($all_valarray);
+$sumLast = array_sum($lastValue);
+$percent = round (100 * $sumLast / ($totalDay/12) , 0);
+$sumsArray = array();
+foreach ($all_valarray as $time => $valarray) {
+    $sumsArray[] = array_sum($valarray);
+}
+$peak = max($sumsArray);
+$subtitle = '["' . getTxt("today") . ": " . $nice_last_date . " - $sumLast W = $percent % - " . getTxt("peak") .": $peak W" .
+    '", "'.  getTxt("total") . ":" . ($totalDay/12000) . " kWh MAX: ". $nice_max_date . '"]';
+
+echo "";
 ?>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4/dist/chart.umd.min.js"></script>
@@ -301,14 +317,14 @@ $subtitle = getTxt("total") . ": $totalDay kWh";
                             stacked: true,
                             type: "time",
                             time: {
-                                unit: 'second',
+                                unit: 'hour',
                                 tooltipFormat: 'yyyy-MM-dd HH:mm',
                                 displayFormats: {
-                                    second: 'HH:mm'
+                                    hour: 'HH:mm'
                                 }
                             },
                             ticks: {
-                                stepSize: 3600
+                                stepSize: 1,
                             }
                         },
                         y: {
@@ -318,9 +334,10 @@ $subtitle = getTxt("total") . ": $totalDay kWh";
                                 text: 'Power (kWp)'
                             },
                             ticks: {
-                                callback: function(value, index, ticks) {
-                                    return  (value/1000).toFixed(0)
-                                }
+                                callback: function (value, index, ticks) {
+                                    return (value / 1000).toFixed(1)
+                                },
+                                count: 5,
                             }
                         },
                         'y-temperature': {
@@ -332,9 +349,13 @@ $subtitle = getTxt("total") . ": $totalDay kWh";
                                 text: '<?= getTxt("temperature") ?> (°C)'
                             },
                             ticks: {
-                                callback: function(value, index, ticks) {
+                                callback: function (value, index, ticks) {
                                     return value.toFixed(1) + '°C';
-                                }
+                                },
+                                major: {
+                                    enabled: true,
+                                },
+                                count: 5,
                             }
                         },
                         x1: {
@@ -350,6 +371,16 @@ $subtitle = getTxt("total") . ": $totalDay kWh";
                             grid: {
                                 drawOnChartArea: false, // only want the grid lines for one axis to show up
                             },
+                            title: {
+                                display: true,
+                                text: '<?= getTxt("total") ?> kWp'
+                            },
+                            ticks: {
+                                callback: function (value, index, ticks) {
+                                    return (value / 1000).toFixed(0);
+                                },
+                                count: 5,
+                            },
                             stacked: true,
 
                         },
@@ -362,13 +393,17 @@ $subtitle = getTxt("total") . ": $totalDay kWh";
                             display: <?= $show_legende ?>,
                             position: 'bottom',
                             labels: {
-                                filter: item => !item.text.includes('line')
+                                filter: item => !item.text.includes('line'),
+                                sort: function (li0, li1, chartData) {
+                                    let chart = chartData;
+                                    return (chart.datasets[li0.datasetIndex].legendOrder - chart.datasets[li1.datasetIndex].legendOrder)
+                                },
                             },
-                            onClick: getCustomLegendClickHandler()
+                            onClick: getCustomLegendClickHandler(),
                         },
                         subtitle: {
                             display: true,
-                            text: '<?= $subtitle ?>',
+                            text: <?= $subtitle ?>,
                             padding: {top: 5, left: 0, right: 0, bottom: 3},
                         },
                     },

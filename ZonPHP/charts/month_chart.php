@@ -167,17 +167,7 @@ foreach (PLANT_NAMES as $inverter_name) {
                     expectedValue: " . $nfrefmaand[$inverter_name] . ",
                     maxIndex: " . $maxIndex . ",
                     fill: true,
-                    backgroundColor: function(context) {                         
-                       var gradientFill = ctx.createLinearGradient(0, 0, 0, 500);                                   
-                       if (context.index == context.dataset.maxIndex-1) {
-                          gradientFill.addColorStop(0, " . $myMaxColor1 . ");
-                          gradientFill.addColorStop(1, " . $myMaxColor2 . ");
-                       } else {
-                          gradientFill.addColorStop(0, " . $myColor1 . ");
-                          gradientFill.addColorStop(1, " . $myColor2 . ");
-                       }
-                       return gradientFill;
-                    },
+                    backgroundColor: gradientBackground,
                     yAxisID: 'y',
                     xAxisID: 'x',
                     isData: true,
@@ -258,6 +248,51 @@ $subtitle = getTxt("total") . ": $monthTotal kWh";
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4/dist/chart.umd.min.js"></script>
 <script src="<?= HTML_PATH ?>inc/js/chart_support.js"></script>
 <script>
+    function gradientBackground(context, col1, col2) {
+        const {dataIndex, datasetIndex, element} = context;
+
+        let {height, base} = element.getProps(["base", "height"], true);
+        let ygTop, ygBottom;
+        if (!height) {
+            const vScale = context.chart.getDatasetMeta(context.datasetIndex).vScale;
+            const stacksY = context.parsed?._stacks?.y?._visualValues ?? [context.parsed.y];
+            let yMax = stacksY[0], yMin = 0;
+            for (let i = 0; i < datasetIndex; i++) {
+                if (!Number.isFinite(stacksY[i + 1])) {
+                    break;
+                }
+                yMin = yMax;
+                yMax += stacksY[i + 1];
+            }
+            [ygTop, ygBottom] = [yMax, yMin].map(vScale.getPixelForValue, vScale);
+            if (!ygBottom) {
+                return false;
+
+            }
+        } else {
+            ygTop = base - height;
+            ygBottom = base;
+        }
+
+        const gradientFill = context.chart.ctx.createLinearGradient(0, ygBottom, 0, ygTop);
+
+        // getColorPerInverter + max
+
+        // use datasetIndex to identify the dataset and dataIndex to identify the bar within the set
+        // example setting
+        if (datasetIndex === 0) {
+            gradientFill.addColorStop(0.0, '#003399');  // first dataset starts from blue
+        } else {
+            gradientFill.addColorStop(0.0, '#009933'); // second dataset starts from green
+        }
+        if (dataIndex === 5) {
+            gradientFill.addColorStop(1.0, '#F82F04'); // bars no 6 ends in red
+        } else {
+            gradientFill.addColorStop(1.0, '#F8F804'); // all other bars end in yellow
+        }
+
+        return gradientFill;
+    }
 
     $(function () {
 
