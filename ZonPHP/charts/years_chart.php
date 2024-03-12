@@ -114,6 +114,7 @@ foreach ($inveter_list as $inverter_name) {
     $strdataseries .= " {
                     datasetId: '" . $inverter_name . "', 
                     label: '" . $inverter_name . "', 
+                    inverter: '" . $inverter_name . "', 
                     type: 'bar',                               
                     stack: 'Stack 0',
                     borderWidth: 1,
@@ -125,17 +126,7 @@ foreach ($inveter_list as $inverter_name) {
                     expectedValue: " . $inverterExpected . ",
                     maxIndex: " . $maxIndex . ",
                     fill: true,
-                    backgroundColor: function(context) {                         
-                       var gradientFill = ctx.createLinearGradient(0, 0, 0, 500);                                   
-                       if (context.index == (context.dataset.maxIndex)) {
-                          gradientFill.addColorStop(0, " . $myMaxColor1 . ");
-                          gradientFill.addColorStop(1, " . $myMaxColor2 . ");
-                       } else {
-                          gradientFill.addColorStop(0, " . $myColor1 . ");
-                          gradientFill.addColorStop(1, " . $myColor2 . ");
-                       }
-                       return gradientFill;
-                    },
+                    backgroundColor: customGradientBackground,
                     yAxisID: 'y',
                     isData: true,
                 },
@@ -217,7 +208,9 @@ $subtitle = getTxt("total") . ": " . round($total_sum_for_all_years, 0) . " kWh"
             new Chart(ctx, {
                 data: {
                     labels: [<?= $labels ?>],
-                    datasets: [<?= $strdataseries  ?>]
+                    datasets: [<?= $strdataseries  ?>],
+                    myColors: <?= json_encode(colorsPerInverterJS()) ?>,
+                    maxIndex: <?= $maxIndex ?>,
                 },
                 options: {
                     maintainAspectRatio: false,

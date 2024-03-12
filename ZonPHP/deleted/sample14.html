@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<body>
+
+<canvas id="myChart" width="800" height="400"></canvas>
+
+<script>
+    var ctx = document.getElementById('myChart').getContext("2d")
+
+    function gradientBackground(context){
+        const {dataIndex, datasetIndex, element} = context;
+
+        let {height, base} = element.getProps(["base", "height"], true);
+        let ygTop, ygBottom;
+        if(!height){
+            const vScale = context.chart.getDatasetMeta(context.datasetIndex).vScale;
+            const stacksY = context.parsed?._stacks?.y?._visualValues ?? [context.parsed.y];
+            let yMax = stacksY[0], yMin = 0;
+            for(let i = 0; i < datasetIndex; i++){
+                if(!Number.isFinite(stacksY[i + 1])){
+                    break;
+                }
+                yMin = yMax;
+                yMax += stacksY[i + 1];
+            }
+            [ygTop, ygBottom] =  [yMax, yMin].map(vScale.getPixelForValue, vScale);
+            if(!ygBottom){
+                return false;
+            }
+        }
+        else{
+            ygTop = base - height;
+            ygBottom = base;
+        }
+
+        const gradientFill = context.chart.ctx.createLinearGradient(0, ygBottom, 0, ygTop);
+
+        // use datasetIndex to identify the dataset and dataIndex to identify the bar within the set
+        // example setting
+        if(datasetIndex === 0){
+            gradientFill.addColorStop(0.0, '#003399');  // first dataset starts from blue
+        }
+        else{
+            gradientFill.addColorStop(0.0, '#009933'); // second dataset starts from green
+        }
+        if(dataIndex === 5){
+            gradientFill.addColorStop(1.0, '#F82F04'); // bars no 6 ends in red
+        }
+        else{
+            gradientFill.addColorStop(1.0, '#F8F804'); // all other bars end in yellow
+        }
+
+        return gradientFill;
+    }
+    new Chart('myChart', {
+        type: 'bar',
+        data: {
+            labels: ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL"],
+            datasets: [{
+                label: "Data 1",
+                //fill: true,
+                backgroundColor: gradientBackground,
+                borderWidth: 4,
+                data: [100, 120, 150, 170, 180, 170, 160]
+            },
+                {
+                    label: "Data 2",
+                    //fill: true,
+                    backgroundColor: gradientBackground,
+                    borderWidth: 4,
+                    data: [110, 120, 150, 170, 180, 170, 160]
+                }]
+        },
+        options: {
+            plugins: {
+                legend: {
+                    position: "bottom"
+                }
+            },
+            scales: {
+                y: {
+                    stacked: true,
+                },
+                x: {
+                    stacked: true,
+                }
+            }
+        }
+    });
+</script>
+
+</body>
+</html>

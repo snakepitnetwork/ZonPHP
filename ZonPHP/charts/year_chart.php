@@ -81,7 +81,7 @@ $myColors = colorsPerInverter();
 $my_year = date("Y", $chartdate);
 $myurl = HTML_PATH . "pages/month.php?date=";
 
-$maxIndex = 0;
+$maxIndex = 99;
 $strdataseries = "";
 $totalYear = 0.0;
 $sumAverage = 0.0;
@@ -90,10 +90,12 @@ $sumExpected = 0.0;
 $totalsumCumArray = array();
 $totalsumMaxArray = array();
 $totalsumRefArray = array();
+$sumPerMonthArray = array();
 for ($i = 1; $i <= 12; $i++) {
     $totalsumCumArray[$i] = 0.0;
     $totalsumMaxArray[$i] = 0.0;
     $totalsumRefArray[$i] = 0.0;
+    $sumPerMonthArray[$i] = 0.0;
 }
 
 foreach (PLANT_NAMES as $key => $inverter_name) {
@@ -120,10 +122,7 @@ foreach (PLANT_NAMES as $key => $inverter_name) {
         $val = 0.0;
         if (isset($all_valarray[$inverter_name][$i])) {
             $val = round($all_valarray[$inverter_name][$i], 2);
-            if ($val >= max($all_valarray[$inverter_name])) {
-                // find max value
-                $maxIndex = $i;
-            }
+            $sumPerMonthArray[$i] += $val;
             $totalYear += $val;
         }
         $formattedHref = sprintf("%s%04d-%02d-%02d", $myurl, $my_year, $i, 1);
@@ -141,6 +140,7 @@ foreach (PLANT_NAMES as $key => $inverter_name) {
                     order: 1,  
                     datasetId: '" . $inverter_name . "', 
                     label: '" . $inverter_name . "', 
+                    inverter: '" . $inverter_name . "', 
                     type: 'bar',                               
                     stack: 'Stack 0',
                     borderWidth: 1,
@@ -152,21 +152,19 @@ foreach (PLANT_NAMES as $key => $inverter_name) {
                     expectedValue: 0.0,
                     maxIndex: " . $maxIndex . ",
                     fill: true,
-                    backgroundColor: function(context) {                         
-                       var gradientFill = ctx.createLinearGradient(0, 0, 0, 500);                                   
-                       if (context.index == context.dataset.maxIndex-1) {
-                          gradientFill.addColorStop(0, " . $myMaxColor1 . ");
-                          gradientFill.addColorStop(1, " . $myMaxColor2 . ");
-                       } else {
-                          gradientFill.addColorStop(0, " . $myColor1 . ");
-                          gradientFill.addColorStop(1, " . $myColor2 . ");
-                       }
-                       return gradientFill;
-                    },
+                    backgroundColor: customGradientBackground,
                     yAxisID: 'y',
                     isData: true,
                 },
     ";
+}
+$maxMonthVal = max($sumPerMonthArray);
+$maxIndex = 99;
+for ($i = 1; $i <= 12; $i++) {
+    // find max value
+    if ($sumPerMonthArray[$i] == $maxMonthVal) {
+        $maxIndex = $i-1;
+    }
 }
 
 // max bars
@@ -287,7 +285,9 @@ $subtitle = getTxt("total") . ": $totalYear kWh";
             new Chart(ctx, {
                 data: {
                     labels: [<?= $labels ?>],
-                    datasets: [<?= $strdataseries  ?>]
+                    datasets: [<?= $strdataseries  ?>],
+                    myColors: <?= json_encode(colorsPerInverterJS()) ?>,
+                    maxIndex: <?= $maxIndex ?>
                 },
                 options: {
                     maintainAspectRatio: false,

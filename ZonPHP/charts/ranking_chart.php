@@ -121,12 +121,7 @@ foreach (PLANT_NAMES as $key => $inverter_name) {
                     expectedValue: 0,
                     maxIndex: 0,
                     fill: true,
-                    backgroundColor: function(context) {                         
-                       var gradientFill = ctx.createLinearGradient(0, 0, 0, 500);                                             
-                       gradientFill.addColorStop(0, " . $myColor1 . ");
-                       gradientFill.addColorStop(1, " . $myColor2 . ");         
-                       return gradientFill;
-                    },
+                    backgroundColor: customGradientBackground,
                     yAxisID: 'y',
                     xAxisID: 'x',
                     isData: true,
@@ -199,7 +194,9 @@ if ($isIndexPage) {
                 data: {
                     labels: [<?= $labels ?>],
                     inverters: [<?= $plantNames ?>],
-                    datasets: [<?= $strdataseries  ?>]
+                    datasets: [<?= $strdataseries  ?>],
+                    myColors: <?= json_encode(colorsPerInverterJS()) ?>,
+                    maxIndex: 99,
                 },
                 options: {
                     maintainAspectRatio: false,

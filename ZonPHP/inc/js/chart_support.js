@@ -213,3 +213,65 @@ function getSelectedInverters() {
     })
     return stripLastChar(selectedInverters)
 }
+
+function customGradientBackground(context) {
+    const {dataIndex, datasetIndex, element} = context;
+
+    let {height, base} = element.getProps(["base", "height"], true);
+    let ygTop, ygBottom;
+    if (!height) {
+        const vScale = context.chart.getDatasetMeta(context.datasetIndex).vScale;
+        const stacksY = context.parsed?._stacks?.y?._visualValues ?? [context.parsed.y];
+        let yMax = stacksY[0], yMin = 0;
+        for (let i = 0; i < datasetIndex; i++) {
+            if (!Number.isFinite(stacksY[i + 1])) {
+                break;
+            }
+            yMin = yMax;
+            yMax += stacksY[i + 1];
+        }
+        [ygTop, ygBottom] = [yMax, yMin].map(vScale.getPixelForValue, vScale);
+        if (!ygBottom) {
+            return false;
+        }
+    } else {
+        ygTop = base - height;
+        ygBottom = base;
+    }
+    const gradientFill = context.chart.ctx.createLinearGradient(0, ygBottom, 0, ygTop);
+
+
+    let myChart = context.chart.data;
+    const myColors = context.chart.data.myColors;
+    let inverter = myChart.datasets[context.datasetIndex].inverter;
+    maxIdx = 0;
+    if (inverter != null) {
+        minCol = myColors[inverter].min;
+        maxCol = myColors[inverter].max;
+        maxIdx = context.chart.data.maxIndex; // myChart.datasets[context.datasetIndex].maxIndex;
+    } else {
+        minCol = '#003399';
+        maxCol = '#F82F04';
+    }
+    if (maxIdx > 0) {
+        maxIdx = maxIdx - 1;
+    }
+
+    // use datasetIndex to identify the dataset and dataIndex to identify the bar within the set
+    if (datasetIndex === maxIdx) {
+        //    gradientFill.addColorStop(0.0, '#F82F04');  // first dataset starts from blue
+    } else {
+        //  gradientFill.addColorStop(0.0, minCol); // second dataset starts from green
+    }
+    // bars
+    if (dataIndex === maxIdx) {
+        // max bar
+        gradientFill.addColorStop(0.0, '#AC0001');
+        gradientFill.addColorStop(1.0, '#FC000D');
+    } else {
+        gradientFill.addColorStop(0.0, minCol);
+        gradientFill.addColorStop(1.0, maxCol);
+    }
+
+    return gradientFill;
+}
