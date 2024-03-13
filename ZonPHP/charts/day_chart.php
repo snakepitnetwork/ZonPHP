@@ -13,6 +13,7 @@ if (isset($_GET['date'])) {
     $chartdate = $_SESSION['CHARTDATE'] ?? time();
 }
 $chartdatestring = date("Y-m-d", $chartdate);
+$dateTimeUTC = date("Y-m-d 00:00:00", $chartdate);;
 
 $isIndexPage = false;
 if (isset($_POST['action']) && ($_POST['action'] == "indexpage")) {
@@ -90,7 +91,7 @@ if (mysqli_num_rows($resultmd) != 0) {
         }
     }
 }
-$nice_last_date = convertToLocalDateTime( $dateTimeUTC,  "H:i");
+$nice_last_date = convertToLocalDateTime($dateTimeUTC, "H:i");
 // -----------------------------  build data for chart -----------------------------------------------------------------
 
 $strgegmax = "";
@@ -141,6 +142,7 @@ foreach (PLANT_NAMES as $key => $inverter_name) {
     $strdataseries .= " {
                     datasetId: '" . $inverter_name . "', 
                     label: '" . $inverter_name . "', 
+                    inverter: '" . $inverter_name . "', 
                     type: 'line',                               
                     stack: 'Stack-DATA',
                     borderWidth: 1,
@@ -152,7 +154,7 @@ foreach (PLANT_NAMES as $key => $inverter_name) {
                     expectedValue: 0,
                     maxIndex: 0,
                     fill: true,
-                    pointStyle: false, 
+                    pointStyle: false,                                         
                     backgroundColor: function(context) {                         
                        var gradientFill = ctx.createLinearGradient(0, 0, 0, 500);                                   
                        gradientFill.addColorStop(0, " . $myColor1 . ");
@@ -281,16 +283,27 @@ if (strlen($str_temp_vals) > 0) {
     $show_temp_axis = "true";
     $show_cum_axis = "false";
 }
+
+// build subtitle ------------------------------
 $lastValue = end($all_valarray);
-$sumLast = array_sum($lastValue);
-$percent = round (100 * $sumLast / ($totalDay/12) , 0);
+if ($lastValue) {
+    $sumLast = array_sum($lastValue);
+} else {
+    $sumLast = 0;
+    $totalDay = 1;
+}
+$percent = round(100 * $sumLast / ($totalDay / 12), 0);
 $sumsArray = array();
 foreach ($all_valarray as $time => $valarray) {
     $sumsArray[] = array_sum($valarray);
 }
-$peak = max($sumsArray);
-$subtitle = '["' . getTxt("today") . ": " . $nice_last_date . " - $sumLast W = $percent % - " . getTxt("peak") .": $peak W" .
-    '", "'.  getTxt("total") . ":" . ($totalDay/12000) . " kWh MAX: ". $nice_max_date . '"]';
+if (count($sumsArray) > 0) {
+    $peak = max($sumsArray);
+} else {
+    $peak = 0;
+}
+$subtitle = '["' . getTxt("today") . ": " . $nice_last_date . " - $sumLast W = $percent % - " . getTxt("peak") . ": $peak W" .
+    '", "' . getTxt("total") . ":" . round(($totalDay / 12000), 1) . " kWh MAX: " . $nice_max_date . '"]';
 
 echo "";
 ?>
@@ -308,7 +321,8 @@ echo "";
             new Chart(ctx, {
                 data: {
                     labels: [],
-                    datasets: [<?= $strdataseries  ?>]
+                    datasets: [<?= $strdataseries  ?>],
+                    myColors: <?= json_encode(colorsPerInverterJS()) ?>,
                 },
                 options: {
                     maintainAspectRatio: false,
