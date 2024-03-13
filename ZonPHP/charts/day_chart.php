@@ -75,6 +75,7 @@ $sqlmdinv = "SELECT Geg_Dag AS gem, Datum_Dag, Naam FROM " . TABLE_PREFIX . "_da
     date("Y-m-d", strtotime($maxdag)) . "%' ORDER BY Datum_Dag, Naam ASC";
 $resultmd = mysqli_query($con, $sqlmdinv) or die("Query failed. dag-max-dag " . mysqli_error($con));
 $maxdagpeak = 0;
+
 if (mysqli_num_rows($resultmd) != 0) {
     $maxdagpeak = 0;
     while ($row = mysqli_fetch_array($resultmd)) {
@@ -111,7 +112,7 @@ $cnt = 0;
 $inverterCount = 0;
 $inverterAverage = 0;
 $totalsumCumArray = array();
-
+$totalMaxSum = 0;
 foreach (PLANT_NAMES as $key => $inverter_name) {
     $myColor1 = $myColors[$inverter_name]['min'];
     $myColor2 = $myColors[$inverter_name]['max'];
@@ -179,6 +180,7 @@ foreach (PLANT_NAMES as $key => $inverter_name) {
         }
         if (!isset($valarraymax[$inverter_name])) $valarraymax[$inverter_name] = 0;
         $strdatamax .= '{x:' . ($time * 1000) . ', y:' . $valarraymax[$inverter_name] . '},';
+        $totalMaxSum += $valarraymax[$inverter_name];
     }
     // Max line
     $strdataseries .= " {
@@ -292,7 +294,7 @@ if ($lastValue) {
     $sumLast = 0;
     $totalDay = 1;
 }
-$percent = round(100 * $sumLast / ($totalDay / 12), 0);
+
 $sumsArray = array();
 foreach ($all_valarray as $time => $valarray) {
     $sumsArray[] = array_sum($valarray);
@@ -302,8 +304,9 @@ if (count($sumsArray) > 0) {
 } else {
     $peak = 0;
 }
-$subtitle = '["' . getTxt("today") . ": " . $nice_last_date . " - $sumLast W = $percent % - " . getTxt("peak") . ": $peak W" .
-    '", "' . getTxt("total") . ":" . round(($totalDay / 12000), 1) . " kWh MAX: " . $nice_max_date . '"]';
+$totalMaxSum = round($totalMaxSum / 10000, 2);
+$subtitle = '["' . getTxt("today") . ": " . $nice_last_date . " - $sumLast W - " . getTxt("peak") . ": $peak W" .
+    '", "' . getTxt("total") . ":" . round(($totalDay / 12000), 1) . " kWh MAX: " . $nice_max_date . " - $totalMaxSum kWh" . '"]';
 
 echo "";
 ?>
@@ -314,6 +317,86 @@ echo "";
 <script>
 
     $(function () {
+            function buildSubtitle() {
+                return "Holg Was here"
+            }
+
+            function customDayLegendClick(e, legendItem, legend) {
+                // myTest();
+                let chart = legend.chart;
+                Chart.defaults.plugins.legend.onClick(e, legendItem, legend);
+                let data = chart.data;
+                let avgSum = [];
+                let expectedSum = [];
+                let cumSum = []
+                let maxSum = [];
+                let refSum = [];
+
+                for (i in data.datasets) {
+                    let meta = chart.getDatasetMeta(i);
+                    let dataset = chart.data.datasets[i];
+                    let isHidden = meta.hidden === null ? false : meta.hidden;
+                    if (dataset.isData && !isHidden) {
+                        if (cumSum.length === 0) {
+                            cumSum = cloneAndResetY(dataset.dataCUM)
+                        }
+                        for (ii in dataset.data) {
+                            // avg
+                            if (avgSum[ii] == null) avgSum[ii] = 0;
+                            avgSum[ii] = avgSum[ii] + dataset.averageValue;
+
+                            // expected
+                            if (expectedSum[ii] == null) expectedSum[ii] = 0;
+                            expectedSum[ii] = expectedSum[ii] + dataset.expectedValue;
+
+                            // max
+                            if (maxSum[ii] == null) maxSum[ii] = 0;
+                            if (dataset.dataMAX[ii] != null) {
+                                maxSum[ii] = maxSum[ii] + dataset.dataMAX[ii].y;
+                            }
+
+                            // cum
+                            if (dataset.dataCUM[ii].y != null) {
+                                cumSum[ii].y = cumSum[ii].y + dataset.dataCUM[ii].y;
+                            }
+                            // ref per month
+                            if (refSum[ii] == null) refSum[ii] = 0;
+                            if (dataset.dataREF[ii] != null) {
+                                refSum[ii] = refSum[ii] + dataset.dataREF[ii].y;
+                            }
+                        }
+
+                    }
+                }
+                let avgIDX = findDatasetById(data.datasets, "avg");
+                if (avgIDX > 0) {
+                    data.datasets[avgIDX].data = avgSum;
+                }
+                let expectedIDX = findDatasetById(data.datasets, "expected");
+                if (expectedIDX > 0) {
+                    data.datasets[expectedIDX].data = expectedSum;
+                }
+                let cumIDX = findDatasetById(data.datasets, "cum");
+                if (cumIDX > 0) {
+                    data.datasets[cumIDX].data = cumSum;
+                }
+                let maxIDX = findDatasetById(data.datasets, "max");
+                if (maxIDX > 0) {
+                    data.datasets[maxIDX].data = maxSum;
+                }
+                let refIDX = findDatasetById(data.datasets, "ref");
+                if (refIDX > 0) {
+                    data.datasets[refIDX].data = refSum;
+                }
+                let myTitle = {
+                    text: buildSubtitle,
+                    color: 'green',
+                    display: true,
+                };
+                chart.options.plugins.subtitle = myTitle;
+                chart.update();
+            }
+
 
             const ctx = document.getElementById('day_chart_canvas').getContext("2d");
 
@@ -325,6 +408,20 @@ echo "";
                     myColors: <?= json_encode(colorsPerInverterJS()) ?>,
                 },
                 options: {
+                    animation: {
+                        onComplete: function (context, abc) {
+                            let myTitle = {
+                                text: "buildSubtitle",
+                                color: 'green',
+                                display: true,
+                            };
+                            let myChart = context.chart.data;
+                            
+                            //  context.chart.options.plugins.subtitle = myTitle;
+                            //  context.chart.update();
+                            //  xxx = myTitle;
+                        }
+                    },
                     maintainAspectRatio: false,
                     scales: {
                         x: {
@@ -345,7 +442,7 @@ echo "";
                             stacked: true,
                             title: {
                                 display: true,
-                                text: 'Power (kWp)'
+                                text: 'Power (kW)'
                             },
                             ticks: {
                                 callback: function (value, index, ticks) {
@@ -387,11 +484,11 @@ echo "";
                             },
                             title: {
                                 display: true,
-                                text: '<?= getTxt("total") ?> kWp'
+                                text: '<?= getTxt("total") ?> kWh'
                             },
                             ticks: {
                                 callback: function (value, index, ticks) {
-                                    return (value / 1000).toFixed(0);
+                                    return (value / 1000).toFixed(2);
                                 },
                                 count: 5,
                             },
@@ -413,13 +510,15 @@ echo "";
                                     return (chart.datasets[li0.datasetIndex].legendOrder - chart.datasets[li1.datasetIndex].legendOrder)
                                 },
                             },
-                            onClick: getCustomLegendClickHandler(),
+                            onClick: customDayLegendClick,
                         },
                         subtitle: {
                             display: true,
                             text: <?= $subtitle ?>,
                             padding: {top: 5, left: 0, right: 0, bottom: 3},
+
                         },
+
                     },
                     onClick: (event, elements, chart) => {
                         if (elements[0]) {

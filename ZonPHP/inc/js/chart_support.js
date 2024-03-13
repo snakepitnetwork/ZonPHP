@@ -54,7 +54,9 @@ function getCustomLegendClickHandler() {
             let dataset = chart.data.datasets[i];
             let isHidden = meta.hidden === null ? false : meta.hidden;
             if (dataset.isData && !isHidden) {
-                if (cumSum.length === 0) cumSum = cloneAndResetY(dataset.dataCUM)
+                if (cumSum.length === 0) {
+                    cumSum = cloneAndResetY(dataset.dataCUM)
+                }
                 // avg
                 for (ii in dataset.data) {
                     if (avgSum[ii] == null) avgSum[ii] = 0;
