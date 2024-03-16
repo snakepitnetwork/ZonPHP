@@ -1,6 +1,6 @@
 <?php
 // work internally with UTC, converts values from DB if needed from localDateTime to UTC
-global $params, $con, $formatter, $colors, $chart_options, $chart_lang;
+global $params, $con, $formatter, $colors, $chart_options, $chart_lang, $plantNames;
 include_once "../inc/init.php";
 include_once ROOT_DIR . "/inc/connect.php";
 include_once "chart_support.php";
@@ -22,14 +22,14 @@ if (isset($_POST['action']) && ($_POST['action'] == "indexpage")) {
 // -----------------------------  get data from DB -----------------------------------------------------------------
 // query for the day-curve
 $utcDateArray = array();
-$valarray = array();
-$all_valarray = array();
-$inveter_list = array();
+$allValuesPerInverter = array();
+
 $sql = "SELECT SUM( Geg_Dag ) AS gem, naam, Datum_Dag" .
     " FROM " . TABLE_PREFIX . "_dag " .
     " WHERE Datum_Dag LIKE '" . date("Y-m-d", $chartdate) . "%' " .
     " GROUP BY Datum_Dag, naam " .
     " ORDER BY Datum_Dag ASC";
+// todo: filter on active plants with e.g. naam in ("SEEHASE", "TILLY") for safety
 
 $result = mysqli_query($con, $sql) or die("Query failed. dag " . mysqli_error($con));
 if (mysqli_num_rows($result) == 0) {
@@ -44,20 +44,13 @@ if (mysqli_num_rows($result) == 0) {
         $inverter_name = $row['naam'];
         $dateTimeUTC = convertLocalDateTime($db_datetime_str); // date converted in UCT
         $unixTimeUTC = convertToUnixTimestamp($dateTimeUTC); // unix timestamp in UTC
-        $utcDateArray[] = $dateTimeUTC;
-        $all_valarray[$unixTimeUTC] [$inverter_name] = $row['gem'];
-
-        if (!in_array($inverter_name, $inveter_list)) {
-            if (in_array($inverter_name, PLANT_NAMES)) {
-                // add to list only if it configured (ignore db entries)
-                $inveter_list[] = $inverter_name;
-            }
-        }
+        $utcDateArray[] = $unixTimeUTC;
+        $allValuesPerInverter[$inverter_name][$unixTimeUTC] = $row['gem'];
     }
 }
+
 // get best day for current month (max value over all years for current month)
 // Charts will calculate the max kWh
-// todo: filter on active plants with e.g. naam in ("SEEHASE", "TILLY") for safety
 $sqlmaxdag = "
 SELECT Datum_Maand, sum(Geg_Maand) as sum FROM " . TABLE_PREFIX . "_maand WHERE MONTH(Datum_Maand)='" . date('m', $chartdate) . "' " . " GROUP BY Datum_maand ORDER BY `sum` DESC limit 1";
 $resultmaxdag = mysqli_query($con, $sqlmaxdag) or die("Query failed. dag-max " . mysqli_error($con));
@@ -68,87 +61,80 @@ if (mysqli_num_rows($resultmaxdag) > 0) {
 
     }
 }
-$nice_max_date = date("Y-m-d", strtotime($maxdag));
 //query for the best day
-$all_valarraymax = array();
+$nice_max_date = date("Y-m-d", strtotime($maxdag));
+$allValuesMaxDay = array();
 $sqlmdinv = "SELECT Geg_Dag AS gem, Datum_Dag, Naam FROM " . TABLE_PREFIX . "_dag WHERE Datum_Dag LIKE  '" .
     date("Y-m-d", strtotime($maxdag)) . "%' ORDER BY Datum_Dag, Naam ASC";
 $resultmd = mysqli_query($con, $sqlmdinv) or die("Query failed. dag-max-dag " . mysqli_error($con));
-$maxdagpeak = 0;
 
 if (mysqli_num_rows($resultmd) != 0) {
-    $maxdagpeak = 0;
+
     while ($row = mysqli_fetch_array($resultmd)) {
         $inverter_name = $row['Naam'];
         $time_only = substr($row['Datum_Dag'], -9);
-
         $today_max = $chartdatestring . $time_only; // current chart date string + max time
         $today_max_utc = convertLocalDateTime($today_max); // date in UTC
         $today_max_unix_utc = convertToUnixTimestamp($today_max_utc); // unix timestamp in UTC
-
-        $all_valarraymax[$today_max_unix_utc] [$inverter_name] = $row['gem'];
-        if ($row['gem'] > $maxdagpeak) {
-            $maxdagpeak = $row['gem'];
-        }
+        $allValuesMaxDay[$inverter_name][$today_max_unix_utc] = intval($row['gem']);
     }
 }
-$nice_last_date = convertToLocalDateTime($dateTimeUTC, "H:i");
-// -----------------------------  build data for chart -----------------------------------------------------------------
 
-$strgegmax = "";
-$strsomkw = "";
+// -----------------------------  build data for chart -----------------------------------------------------------------
 $myColors = colorsPerInverter();
-$strdataseries = "";
-$max_first_val = PHP_INT_MAX;
-$max_last_val = 0;
-$cnt = 0;
-$totalDay = 0.0;
+$utcDateArray = array_unique($utcDateArray);
 $labels = convertValueArrayToDataString($utcDateArray);
-$labels = convertValueArrayToDataString(array_keys($all_valarray));
 
 // day max line per inverter --------------------------------------------------------------
-$strdatamax = "";
-$cnt = 0;
 $inverterCount = 0;
-$inverterAverage = 0;
 $totalsumCumArray = array();
-$totalMaxSum = 0;
+$dataJS = array();
+$allDataSeriesString = "";
+$plantNames = "";
 foreach (PLANT_NAMES as $key => $inverter_name) {
+    $plantNames .= "'$inverter_name',";
     $myColor1 = $myColors[$inverter_name]['min'];
     $myColor2 = $myColors[$inverter_name]['max'];
-    $strdata = "";
-    $cumData = "";
+    $dataSeriesString = "";
+    $cumDataString = "";
     $cumSum = 0;
     $inverterCount++;
-    foreach ($all_valarray as $time => $valarray) {
-        if (!isset($valarray[$inverter_name])) $valarray[$inverter_name] = 0;
-        $timeInMillis = $time * 1000;
-        $strdata .= '{x:' . $timeInMillis . ', y:' . $valarray[$inverter_name] . '},';
-        $cumSum += ($valarray[$inverter_name] / 12);
-        $cumData .= " { x: $timeInMillis, y: $cumSum},";
-        if (!isset($totalsumCumArray[$timeInMillis])) {
-            $totalsumCumArray[$timeInMillis] = 0.0;
+
+    // all values for current inverter if set
+    if (isset($allValuesPerInverter[$inverter_name])) {
+        $inverterValues = $allValuesPerInverter[$inverter_name];
+
+        // loop over all times from all inverters
+        foreach ($utcDateArray as $time) {
+            $currentInverterVal = 0;
+            $timeInMillis = $time * 1000;
+            if (isset($inverterValues[$time])) {
+                $currentInverterVal = $inverterValues[$time];
+            }
+            $dataSeriesString .= '{x:' . $timeInMillis . ', y:' . $currentInverterVal . '},';
+            $cumSum += ($currentInverterVal / 12);
+            $cumDataString .= "{x: $timeInMillis, y: $cumSum},";
+            if (!isset($totalsumCumArray[$timeInMillis])) {
+                $totalsumCumArray[$timeInMillis] = 0;
+            }
+            $totalsumCumArray[$timeInMillis] += $cumSum;
         }
-        $totalsumCumArray[$timeInMillis] = $totalsumCumArray[$timeInMillis] + $cumSum;
-        $totalDay += $valarray[$inverter_name];
-        // remember first and last date
-        if ($max_first_val > $time) {
-            $max_first_val = $time;
-        }
-        if ($max_last_val < $time) {
-            $max_last_val = $time;
-        }
-    }
-    // Day line
-    $strdataseries .= " {
+        $dataJS[$inverter_name]['totalValue'] = $cumSum;
+        $dataJS[$inverter_name]['peak'] = $params[$inverter_name]["capacity"];
+        $dataJS[$inverter_name]['lastDate'] = convertDateTimeToLocalDateTime(array_key_last($inverterValues), "H:i");
+        $dataJS[$inverter_name]['lastValue'] = end($inverterValues);
+        $dataJS[$inverter_name]['maxDay'] = $nice_max_date;
+
+        // Day line
+        $allDataSeriesString .= " {
                     datasetId: '" . $inverter_name . "', 
                     label: '" . $inverter_name . "', 
                     inverter: '" . $inverter_name . "', 
                     type: 'line',                               
                     stack: 'Stack-DATA',
                     borderWidth: 1,
-                    data: [" . $strdata . "],                    
-                    dataCUM: [" . "$cumData" . "],
+                    data: [" . $dataSeriesString . "],                    
+                    dataCUM: [" . "$cumDataString" . "],
                     dataMAX: [], 
                     dataREF: [],
                     averageValue: 0,
@@ -168,28 +154,26 @@ foreach (PLANT_NAMES as $key => $inverter_name) {
                     order: 10,
                     legendOrder: " . $inverterCount . ",
                 },
-    ";
+        ";
 
-    // max line per inverter
-    $strdatamax = "";
-    foreach ($all_valarraymax as $time => $valarraymax) {
-        $cnt++;
-        if ($cnt == 1) {
-            // remember first date
-            $max_first_val = $time;
+        // max line per inverter
+        $dataSeriesMaxString = "";
+        $inverterMaxDayCumSum = 0;
+        if (isset($allValuesMaxDay[$inverter_name])) {
+            $inverterMaxValues = $allValuesMaxDay[$inverter_name];
+            foreach ($inverterMaxValues as $time => $currentVal) {
+                $dataSeriesMaxString .= '{x:' . ($time * 1000) . ', y:' . $currentVal . '},';
+                $inverterMaxDayCumSum += $currentVal / 12;
+            }
         }
-        if (!isset($valarraymax[$inverter_name])) $valarraymax[$inverter_name] = 0;
-        $strdatamax .= '{x:' . ($time * 1000) . ', y:' . $valarraymax[$inverter_name] . '},';
-        $totalMaxSum += $valarraymax[$inverter_name];
-    }
-    // Max line
-    $strdataseries .= " {
+        $dataJS[$inverter_name]['maxDayValue'] = $inverterMaxDayCumSum;
+        $allDataSeriesString .= " {
                     datasetId: 'max-" . $inverter_name . "', 
-                    label: '" . getTxt("max") . " - " . $inverter_name . "', 
+                    label: 'max-" . $inverter_name . "', 
                     type: 'line',                               
                     stack: 'Stack-MAX',
                     borderWidth: 1,
-                    data: [" . $strdatamax . "],                    
+                    data: [" . $dataSeriesMaxString . "],                    
                     averageValue: 0,
                     expectedValue: 0,
                     maxIndex: 0,
@@ -202,11 +186,12 @@ foreach (PLANT_NAMES as $key => $inverter_name) {
                     order: 1,
                     legendOrder: " . $inverterCount + 100 . ",
                 },
-    ";
+        ";
+    }
 }
 
 // cumulative
-$strdataseries .= " {
+$allDataSeriesString .= " {
                     order: 10,  
                     datasetId: 'cum', 
                     label: '" . getTxt("cum") . "', 
@@ -236,7 +221,7 @@ if ($params['useWeewx']) {
 
 // Temperature line if available
 if (strlen($str_temp_vals) > 0) {
-    $strdataseries .= " {
+    $allDataSeriesString .= " {
                     datasetId: 'temperature', 
                     label: '" . getTxt("temperature") . "', 
                     type: 'line',                                                   
@@ -285,30 +270,6 @@ if (strlen($str_temp_vals) > 0) {
     $show_temp_axis = "true";
     $show_cum_axis = "false";
 }
-
-// build subtitle ------------------------------
-$lastValue = end($all_valarray);
-if ($lastValue) {
-    $sumLast = array_sum($lastValue);
-} else {
-    $sumLast = 0;
-    $totalDay = 1;
-}
-
-$sumsArray = array();
-foreach ($all_valarray as $time => $valarray) {
-    $sumsArray[] = array_sum($valarray);
-}
-if (count($sumsArray) > 0) {
-    $peak = max($sumsArray);
-} else {
-    $peak = 0;
-}
-$totalMaxSum = round($totalMaxSum / 10000, 2);
-$subtitle = '["' . getTxt("today") . ": " . $nice_last_date . " - $sumLast W - " . getTxt("peak") . ": $peak W" .
-    '", "' . getTxt("total") . ":" . round(($totalDay / 12000), 1) . " kWh MAX: " . $nice_max_date . " - $totalMaxSum kWh" . '"]';
-
-echo "";
 ?>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4/dist/chart.umd.min.js"></script>
@@ -317,8 +278,41 @@ echo "";
 <script>
 
     $(function () {
-            function buildSubtitle() {
-                return "Holg Was here"
+            function buildSubtitle(ctx) {
+                let chart = ctx.chart;
+                let data = ctx.chart.data;
+                let dataJS = data.dataJS;
+                let txt = data.txt;
+                let totalValue = 0;
+                let lastDate = Date.now();
+                let lastValue = 0;
+                let maxDay = Date.now();
+                let maxDayValue = 0;
+                let peak = 0;
+                for (i in data.datasets) {
+                    let meta = chart.getDatasetMeta(i);
+                    let dataset = chart.data.datasets[i];
+                    let inverter = dataset.inverter;
+                    let isHidden = meta.hidden === null ? false : meta.hidden;
+                    if (dataset.isData && !isHidden) {
+                        totalValue += parseInt(dataJS[inverter].totalValue);
+                        peak += parseInt(dataJS[inverter].peak);
+                        lastDate = dataJS[inverter].lastDate;
+                        lastValue += parseInt(dataJS[inverter].lastValue);
+                        maxDay = dataJS[inverter].maxDay;
+                        maxDayValue += parseInt(dataJS[inverter].maxDayValue);
+                    }
+                }
+                if (peak === 0) {
+                    kWp = totalValue;
+                } else {
+                    kWp = (totalValue / peak).toFixed(2);
+                }
+
+                let out = [txt["today"] + ": " + lastDate + " - " + lastValue + "W - " + txt["peak"] + ": " + peak + "W",
+                    txt["total"] + ":" + totalValue + "kWh = " + kWp + "kWh/kWp  - MAX: " + maxDay + " - " + maxDayValue + "kWh"];
+
+                return out;
             }
 
             function customDayLegendClick(e, legendItem, legend) {
@@ -326,74 +320,49 @@ echo "";
                 let chart = legend.chart;
                 Chart.defaults.plugins.legend.onClick(e, legendItem, legend);
                 let data = chart.data;
-                let avgSum = [];
-                let expectedSum = [];
                 let cumSum = []
-                let maxSum = [];
-                let refSum = [];
-
                 for (i in data.datasets) {
                     let meta = chart.getDatasetMeta(i);
-                    let dataset = chart.data.datasets[i];
+                    let dataset = data.datasets[i];
+                    let inverter = dataset.inverter;
                     let isHidden = meta.hidden === null ? false : meta.hidden;
-                    if (dataset.isData && !isHidden) {
-                        if (cumSum.length === 0) {
-                            cumSum = cloneAndResetY(dataset.dataCUM)
-                        }
-                        for (ii in dataset.data) {
-                            // avg
-                            if (avgSum[ii] == null) avgSum[ii] = 0;
-                            avgSum[ii] = avgSum[ii] + dataset.averageValue;
-
-                            // expected
-                            if (expectedSum[ii] == null) expectedSum[ii] = 0;
-                            expectedSum[ii] = expectedSum[ii] + dataset.expectedValue;
-
-                            // max
-                            if (maxSum[ii] == null) maxSum[ii] = 0;
-                            if (dataset.dataMAX[ii] != null) {
-                                maxSum[ii] = maxSum[ii] + dataset.dataMAX[ii].y;
+                    if (dataset.isData) {
+                        if (!isHidden) {
+                            if (cumSum.length === 0) {
+                                cumSum = cloneAndResetY(dataset.dataCUM)
                             }
+                            for (ii in dataset.data) {
 
-                            // cum
-                            if (dataset.dataCUM[ii].y != null) {
-                                cumSum[ii].y = cumSum[ii].y + dataset.dataCUM[ii].y;
+                                // cum
+                                if (dataset.dataCUM[ii].y != null) {
+                                    cumSum[ii].y = cumSum[ii].y + dataset.dataCUM[ii].y;
+                                }
                             }
-                            // ref per month
-                            if (refSum[ii] == null) refSum[ii] = 0;
-                            if (dataset.dataREF[ii] != null) {
-                                refSum[ii] = refSum[ii] + dataset.dataREF[ii].y;
+                            let maxIDX = findDatasetById(data.datasets, "max-" + inverter);
+                            if (maxIDX >= 0) {
+                                chart.setDatasetVisibility(maxIDX, true);
+                            }
+                        } else {
+                            // hide maxBar for invisible inverters
+                            let maxIDX = findDatasetById(data.datasets, "max-" + inverter);
+                            if (maxIDX >= 0) {
+                                chart.setDatasetVisibility(maxIDX, false);
                             }
                         }
-
                     }
                 }
-                let avgIDX = findDatasetById(data.datasets, "avg");
-                if (avgIDX > 0) {
-                    data.datasets[avgIDX].data = avgSum;
-                }
-                let expectedIDX = findDatasetById(data.datasets, "expected");
-                if (expectedIDX > 0) {
-                    data.datasets[expectedIDX].data = expectedSum;
-                }
+
                 let cumIDX = findDatasetById(data.datasets, "cum");
                 if (cumIDX > 0) {
                     data.datasets[cumIDX].data = cumSum;
                 }
-                let maxIDX = findDatasetById(data.datasets, "max");
-                if (maxIDX > 0) {
-                    data.datasets[maxIDX].data = maxSum;
-                }
-                let refIDX = findDatasetById(data.datasets, "ref");
-                if (refIDX > 0) {
-                    data.datasets[refIDX].data = refSum;
-                }
-                let myTitle = {
-                    text: buildSubtitle,
-                    color: 'green',
+
+                let mySubTitle = {
+                    text: buildSubtitle(legend),
                     display: true,
                 };
-                chart.options.plugins.subtitle = myTitle;
+
+                chart.options.plugins.subtitle = mySubTitle;
                 chart.update();
             }
 
@@ -404,24 +373,13 @@ echo "";
             new Chart(ctx, {
                 data: {
                     labels: [],
-                    datasets: [<?= $strdataseries  ?>],
+                    datasets: [<?= $allDataSeriesString  ?>],
+                    dataJS: <?= json_encode($dataJS)  ?>,
+                    inverters: [<?= $plantNames ?>],
                     myColors: <?= json_encode(colorsPerInverterJS()) ?>,
+                    txt: <?= json_encode($_SESSION['txt']); ?>
                 },
                 options: {
-                    animation: {
-                        onComplete: function (context, abc) {
-                            let myTitle = {
-                                text: "buildSubtitle",
-                                color: 'green',
-                                display: true,
-                            };
-                            let myChart = context.chart.data;
-                            
-                            //  context.chart.options.plugins.subtitle = myTitle;
-                            //  context.chart.update();
-                            //  xxx = myTitle;
-                        }
-                    },
                     maintainAspectRatio: false,
                     scales: {
                         x: {
@@ -449,7 +407,11 @@ echo "";
                                     return (value / 1000).toFixed(1)
                                 },
                                 count: 5,
-                            }
+                            },
+                            grid: {
+                                drawOnChartArea: true,
+                                offset: true
+                            },
                         },
                         'y-temperature': {
                             stacked: false,
@@ -504,7 +466,7 @@ echo "";
                             display: <?= $show_legende ?>,
                             position: 'bottom',
                             labels: {
-                                filter: item => !item.text.includes('line'),
+                                filter: item => !item.text.includes('max-'),
                                 sort: function (li0, li1, chartData) {
                                     let chart = chartData;
                                     return (chart.datasets[li0.datasetIndex].legendOrder - chart.datasets[li1.datasetIndex].legendOrder)
@@ -514,9 +476,10 @@ echo "";
                         },
                         subtitle: {
                             display: true,
-                            text: <?= $subtitle ?>,
+                            text: function (ctx) {
+                                return buildSubtitle(ctx)
+                            },
                             padding: {top: 5, left: 0, right: 0, bottom: 3},
-
                         },
 
                     },

@@ -287,7 +287,7 @@ $subtitle = getTxt("total") . ": $totalYear kWh";
                     labels: [<?= $labels ?>],
                     datasets: [<?= $strdataseries  ?>],
                     myColors: <?= json_encode(colorsPerInverterJS()) ?>,
-                    maxIndex: <?= $maxIndex ?>
+                    maxIndex: <?= $maxIndex ?>,
                 },
                 options: {
                     maintainAspectRatio: false,

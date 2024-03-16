@@ -39,7 +39,6 @@ $sql = "SELECT Datum_Maand, Geg_Maand, naam
 $result = mysqli_query($con, $sql) or die("Query failed. maand " . mysqli_error($con));
 $daycount = 0;
 $all_valarray = array();
-$inveter_list = array();
 $monthTotal = 0.0;
 if (mysqli_num_rows($result) == 0) {
     $formatter->setPattern('LLLL yyyy');
