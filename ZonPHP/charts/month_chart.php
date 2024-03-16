@@ -109,6 +109,7 @@ $myColor2 = "'#FFAABB'";
 $labels = "";
 
 $totalsumCumArray = array();
+$dataJS = array();
 for ($i = 1; $i <= $DaysPerMonth; $i++) {
     $labels .= '"' . $i . '",';
     $totalsumCumArray[$i] = 0.0;
@@ -150,7 +151,13 @@ foreach (PLANT_NAMES as $inverter_name) {
     }
 
     $maxval_yaxis += $local_max;
-    $local_max = 0;
+    $dataJS["date"] = $datum ;
+    $dataJS[$inverter_name]['totalValue'] = $cumSum;
+    $dataJS[$inverter_name]['peak'] = $params[$inverter_name]["capacity"];
+    $dataJS[$inverter_name]['max'] = $maxval_yaxis;
+    $dataJS[$inverter_name]['avg'] = $inverterAverage;
+    $dataJS[$inverter_name]['ref'] = $nfrefmaand[$inverter_name];
+
     $strdata = substr($strdata, 0, -1);
     $strdataseries .= " {
                     datasetId: '" . $inverter_name . "', 
@@ -241,14 +248,49 @@ if ($isIndexPage) {
 }
 $monthTotal = round($monthTotal, 2);
 
-$subtitle = getTxt("total") . ": $monthTotal kWh";
-
-
 ?>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4/dist/chart.umd.min.js"></script>
 <script src="<?= HTML_PATH ?>inc/js/chart_support.js"></script>
 <script>
     $(function () {
+            function buildSubtitle(ctx) {
+                let chart = ctx.chart;
+                let data = ctx.chart.data;
+                let dataJS = data.dataJS;
+                let txt = data.txt;
+                let totalValue = 0;
+                let peak = 0;
+                let max = 0;
+                let avg = 0;
+                let ref = 0;
+                let datetxt = dataJS['date'];
+                for (i in data.datasets) {
+                    let meta = chart.getDatasetMeta(i);
+                    let dataset = chart.data.datasets[i];
+                    let inverter = dataset.inverter;
+                    let isHidden = meta.hidden === null ? false : meta.hidden;
+                    if (dataset.isData && !isHidden) {
+                        totalValue += parseInt(dataJS[inverter].totalValue);
+                        peak += parseInt(dataJS[inverter].peak);
+                        max += parseFloat(dataJS[inverter].max);
+                        avg += parseFloat(dataJS[inverter].avg);
+                        ref += parseFloat(dataJS[inverter].ref);
+                    }
+                }
+                if (peak === 0) {
+                    total_kWp = totalValue;
+                    max_kWp = max;
+                } else {
+                    total_kWp = (totalValue / peak).toFixed(2);
+                    max_kWp = (max / peak).toFixed(2);
+                }
+
+                let out = [datetxt + ": " + txt["sum"] + " " + totalValue + "kWh = " + total_kWp + "kWh/kWp",
+                    txt["max"] + ":" + max.toFixed(2) + "kWh = " + max_kWp + "kWh/kWp - " + txt["avg"] +" "+ avg.toFixed(2) + "kWh " + txt["ref"] + ": " + ref.toFixed(2) + "kWh"];
+
+                return out;
+            }
+
             const ctx = document.getElementById('month_chart_canvas').getContext("2d");
 
             Chart.defaults.color = '<?= $colors['color_chart_text_title'] ?>';
@@ -256,8 +298,10 @@ $subtitle = getTxt("total") . ": $monthTotal kWh";
                 data: {
                     labels: [<?= $labels ?>],
                     datasets: [<?= $strdataseries  ?>],
+                    dataJS: <?= json_encode($dataJS)  ?>,
                     myColors: <?= json_encode(colorsPerInverterJS()) ?>,
-                    maxIndex: <?= $maxIndex ?>
+                    maxIndex: <?= $maxIndex ?>,
+                    txt: <?= json_encode($_SESSION['txt']); ?>
                 },
                 options: {
                     maintainAspectRatio: false,
@@ -316,7 +360,9 @@ $subtitle = getTxt("total") . ": $monthTotal kWh";
                         },
                         subtitle: {
                             display: true,
-                            text: '<?= $subtitle ?>',
+                            text: function (ctx) {
+                                return buildSubtitle(ctx)
+                            },
                             padding: {top: 5, left: 0, right: 0, bottom: 3},
                         },
                     },

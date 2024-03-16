@@ -79,6 +79,7 @@ $sumExpected = 0.0;
 $myColors = colorsPerInverter();
 
 $totalsumCumArray = array();
+$dataJS = array();
 foreach ($sum_per_year as $year => $fkw) {
     $labels .= '"' . $year . '",';
     $totalsumCumArray[$year] = 0.0;
@@ -97,8 +98,9 @@ foreach ($inveter_list as $inverter_name) {
     $sumExpected += $inverterExpected;
     $cumSum = 0;
     $idx = 0;
+    $sumMaxYear = max($sum_per_year);
     foreach ($sum_per_year as $ijaar => $fkw) {
-        if ($fkw >= max($sum_per_year)) {
+        if ($fkw >= $sumMaxYear) {
             $maxIndex = $idx;
         }
         // normal chart, $val throws errors when missing inverter index
@@ -110,6 +112,12 @@ foreach ($inveter_list as $inverter_name) {
         $totalsumCumArray[$ijaar] = $totalsumCumArray[$ijaar] + $cumSum;
         $idx++;
     }
+
+    $dataJS[$inverter_name]['totalValue'] = $cumSum;
+    $dataJS[$inverter_name]['peak'] = $params[$inverter_name]["capacity"];
+    $dataJS[$inverter_name]['max'] = $sumMaxYear[$inverter_name];
+    $dataJS[$inverter_name]['avg'] = $inverterAverage;
+    $dataJS[$inverter_name]['ref'] = $sumExpected;
 
     $strdataseries .= " {
                     datasetId: '" . $inverter_name . "', 
@@ -195,13 +203,50 @@ if ($isIndexPage) {
     $show_legende = "false";
 }
 
-$subtitle = getTxt("total") . ": " . round($total_sum_for_all_years, 0) . " kWh";
 
 ?>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4/dist/chart.umd.min.js"></script>
 <script src="<?= HTML_PATH ?>inc/js/chart_support.js"></script>
 <script>
     $(function () {
+
+            function buildSubtitle(ctx) {
+                let chart = ctx.chart;
+                let data = ctx.chart.data;
+                let dataJS = data.dataJS;
+                let txt = data.txt;
+                let totalValue = 0;
+                let peak = 0;
+                let max = 0;
+                let avg = 0;
+                let ref = 0;
+                for (i in data.datasets) {
+                    let meta = chart.getDatasetMeta(i);
+                    let dataset = chart.data.datasets[i];
+                    let inverter = dataset.inverter;
+                    let isHidden = meta.hidden === null ? false : meta.hidden;
+                    if (dataset.isData && !isHidden) {
+                        totalValue += parseInt(dataJS[inverter].totalValue);
+                        peak += parseInt(dataJS[inverter].peak);
+                        max += parseFloat(dataJS[inverter].max);
+                        avg += parseFloat(dataJS[inverter].avg);
+                        ref += parseFloat(dataJS[inverter].ref);
+                    }
+                }
+                if (peak === 0) {
+                    total_kWp = totalValue;
+                    max_kWp = max;
+                } else {
+                    total_kWp = (totalValue / peak).toFixed(2);
+                    max_kWp = (max / peak).toFixed(2);
+                }
+
+                let out = [txt["sum"] + ": " + (totalValue/1000).toFixed(0) + "MWh = " + total_kWp + "kWh/kWp",
+                    txt["max"] + ":" + max.toFixed(0) + "kWh = " + max_kWp + "kWh/kWp - " + txt["avg"] +" " + avg.toFixed(0) + "kWh " + txt["ref"] + ": " + ref.toFixed(0) + "kWh"];
+
+                return out;
+            }
+
             const ctx = document.getElementById('total_chart_canvas').getContext("2d");
 
             Chart.defaults.color = '<?= $colors['color_chart_text_title'] ?>';
@@ -209,8 +254,10 @@ $subtitle = getTxt("total") . ": " . round($total_sum_for_all_years, 0) . " kWh"
                 data: {
                     labels: [<?= $labels ?>],
                     datasets: [<?= $strdataseries  ?>],
+                    dataJS: <?= json_encode($dataJS)  ?>,
                     myColors: <?= json_encode(colorsPerInverterJS()) ?>,
                     maxIndex: <?= $maxIndex ?>,
+                    txt: <?= json_encode($_SESSION['txt']); ?>
                 },
                 options: {
                     maintainAspectRatio: false,
@@ -226,7 +273,7 @@ $subtitle = getTxt("total") . ": " . round($total_sum_for_all_years, 0) . " kWh"
                             },
                             ticks: {
                                 callback: function (value, index, ticks) {
-                                    return (value/1000).toFixed(0)
+                                    return (value / 1000).toFixed(0)
                                 }
                             },
                         },
@@ -246,7 +293,7 @@ $subtitle = getTxt("total") . ": " . round($total_sum_for_all_years, 0) . " kWh"
                             },
                             ticks: {
                                 callback: function (value, index, ticks) {
-                                    return (value/1000).toFixed(0)
+                                    return (value / 1000).toFixed(0)
                                 }
                             },
                         },
@@ -265,7 +312,9 @@ $subtitle = getTxt("total") . ": " . round($total_sum_for_all_years, 0) . " kWh"
                         },
                         subtitle: {
                             display: true,
-                            text: '<?= $subtitle ?>',
+                            text: function (ctx) {
+                                return buildSubtitle(ctx)
+                            },
                             padding: {top: 5, left: 0, right: 0, bottom: 3},
                         },
                     },

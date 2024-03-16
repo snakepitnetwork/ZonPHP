@@ -109,6 +109,12 @@ function getCustomLegendClickHandler() {
         if (refIDX > 0) {
             data.datasets[refIDX].data = refSum;
         }
+        let mySubTitle = {
+            text: buildSubtitle(legend),
+            display: true,
+        };
+
+        chart.options.plugins.subtitle = mySubTitle;
         chart.update();
     };
 }

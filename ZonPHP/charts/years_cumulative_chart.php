@@ -36,7 +36,7 @@ $querydata = array();
 $totaldata = array();
 $names = array();
 $years = array();
-$array = array();
+$dataJS = array();
 if ($result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
         $querydata[$row['Date']][$row['Name']] = $row['Yield'];
@@ -89,6 +89,7 @@ foreach ($totaldata as $date => $value) {
 }
 
 $strdataseries = "";
+$totalCumSum = 0;
 foreach ($valuesPerYear as $year => $allvalue) {
     $strdata = "";
     $cumVal = 0;
@@ -96,6 +97,7 @@ foreach ($valuesPerYear as $year => $allvalue) {
         // normalize all dates to the current year
         $normalizedDate = updateDate($date);
         $cumVal += $value;
+        $totalCumSum += $value;
         if ($normalizedDate != "$currentYear-02-29") {   // ignore leap year 29.2.
             if ($value > 0) {
                 $strdata .= "{ x: '$normalizedDate', y: $cumVal },";
@@ -127,6 +129,12 @@ foreach ($valuesPerYear as $year => $allvalue) {
                 },
     ";
 }
+$x = count($valuesPerYear);
+$xx = $totalCumSum;
+
+$dataJS['totalValue'] = $totalCumSum;
+$dataJS['avg'] = $totalCumSum / count($valuesPerYear);
+$dataJS['inverter'] = strip($visibleInvertersJS);
 
 $show_legende = "true";
 if ($isIndexPage) {
@@ -147,13 +155,30 @@ $labels = "";
 
     $(function () {
 
+            function buildSubtitle(ctx) {
+                let chart = ctx.chart;
+                let data = ctx.chart.data;
+                let dataJS = data.dataJS;
+                let txt = data.txt;
+                let totalValue = parseFloat(dataJS['totalValue']);
+                let avg = parseFloat(dataJS['avg']);
+                let inverter = dataJS['inverter'];
+                let out = [
+                    inverter + " - " + txt["total"] + ": " + (totalValue / 1000).toFixed(0) + "MWh",
+                    txt["average"] + ":" + avg.toFixed(0) + "kWh"
+                ];
+                return out;
+            }
+
             const ctx = document.getElementById('cumulative_chart_canvas').getContext("2d");
 
             Chart.defaults.color = '<?= $colors['color_chart_text_title'] ?>';
             new Chart(ctx, {
                 data: {
                     labels: [<?= $labels ?>],
-                    datasets: [<?= $strdataseries  ?>]
+                    datasets: [<?= $strdataseries  ?>],
+                    dataJS: <?= json_encode($dataJS)  ?>,
+                    txt: <?= json_encode($_SESSION['txt']); ?>
                 },
                 options: {
                     maintainAspectRatio: false,
@@ -182,7 +207,7 @@ $labels = "";
                             },
                             ticks: {
                                 callback: function (value, index, ticks) {
-                                    return (value/1000).toFixed(0)
+                                    return (value / 1000).toFixed(0)
                                 }
                             },
                         },
@@ -197,7 +222,9 @@ $labels = "";
                         },
                         subtitle: {
                             display: true,
-                            text: '<?= $subtitle ?>',
+                            text: function (ctx) {
+                                return buildSubtitle(ctx)
+                            },
                             padding: {top: 5, left: 0, right: 0, bottom: 3},
                         },
                     },

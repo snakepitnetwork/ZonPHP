@@ -119,10 +119,12 @@ foreach (PLANT_NAMES as $key => $inverter_name) {
             }
             $totalsumCumArray[$timeInMillis] += $cumSum;
         }
+
         $dataJS[$inverter_name]['totalValue'] = $cumSum;
         $dataJS[$inverter_name]['peak'] = $params[$inverter_name]["capacity"];
         $dataJS[$inverter_name]['lastDate'] = convertDateTimeToLocalDateTime(array_key_last($inverterValues), "H:i");
         $dataJS[$inverter_name]['lastValue'] = end($inverterValues);
+        $dataJS[$inverter_name]['todayMax'] = max($inverterValues);
         $dataJS[$inverter_name]['maxDay'] = $nice_max_date;
 
         // Day line
@@ -286,6 +288,7 @@ if (strlen($str_temp_vals) > 0) {
                 let totalValue = 0;
                 let lastDate = Date.now();
                 let lastValue = 0;
+                let todayMax = 0;
                 let maxDay = Date.now();
                 let maxDayValue = 0;
                 let peak = 0;
@@ -299,6 +302,7 @@ if (strlen($str_temp_vals) > 0) {
                         peak += parseInt(dataJS[inverter].peak);
                         lastDate = dataJS[inverter].lastDate;
                         lastValue += parseInt(dataJS[inverter].lastValue);
+                        todayMax += parseInt(dataJS[inverter].todayMax);
                         maxDay = dataJS[inverter].maxDay;
                         maxDayValue += parseInt(dataJS[inverter].maxDayValue);
                     }
@@ -309,8 +313,8 @@ if (strlen($str_temp_vals) > 0) {
                     kWp = (totalValue / peak).toFixed(2);
                 }
 
-                let out = [txt["today"] + ": " + lastDate + " - " + lastValue + "W - " + txt["peak"] + ": " + peak + "W",
-                    txt["total"] + ":" + totalValue + "kWh = " + kWp + "kWh/kWp  - MAX: " + maxDay + " - " + maxDayValue + "kWh"];
+                let out = [txt["today"] + " " + lastDate + " - " + lastValue + "W - " + txt["peak"] + ": " + todayMax + "W",
+                    txt["sum"] + ":" + totalValue + "kWh = " + kWp + "kWh/kWp  - MAX: " + maxDay + " - " + maxDayValue + "kWh"];
 
                 return out;
             }

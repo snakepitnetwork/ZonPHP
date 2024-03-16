@@ -86,7 +86,7 @@ $strdataseries = "";
 $totalYear = 0.0;
 $sumAverage = 0.0;
 $sumExpected = 0.0;
-
+$dataJS = array();
 $totalsumCumArray = array();
 $totalsumMaxArray = array();
 $totalsumRefArray = array();
@@ -135,7 +135,11 @@ foreach (PLANT_NAMES as $key => $inverter_name) {
         $refData .= " { x: $i, y: $refValue},";
         $totalsumRefArray[$i] = $totalsumRefArray[$i] + $refValue;
     }
-
+    $maxMonthVal = max($sumPerMonthArray);
+    $dataJS[$inverter_name]['totalValue'] = $cumSum;
+    $dataJS[$inverter_name]['peak'] = $params[$inverter_name]["capacity"];
+    $dataJS[$inverter_name]['avg'] = $inverterAverage;
+    $dataJS[$inverter_name]['max'] = $maxMonthVal;
     $strdataseries .= " {
                     order: 1,  
                     datasetId: '" . $inverter_name . "', 
@@ -158,14 +162,15 @@ foreach (PLANT_NAMES as $key => $inverter_name) {
                 },
     ";
 }
-$maxMonthVal = max($sumPerMonthArray);
+
 $maxIndex = 99;
 for ($i = 1; $i <= 12; $i++) {
     // find max value
     if ($sumPerMonthArray[$i] == $maxMonthVal) {
-        $maxIndex = $i-1;
+        $maxIndex = $i - 1;
     }
 }
+
 
 // max bars
 $strdataseries .= " {
@@ -279,6 +284,41 @@ $subtitle = getTxt("total") . ": $totalYear kWh";
 
     $(function () {
 
+            function buildSubtitle(ctx) {
+                let chart = ctx.chart;
+                let data = ctx.chart.data;
+                let dataJS = data.dataJS;
+                let txt = data.txt;
+                let totalValue = 0;
+                let peak = 0;
+                let max = 0;
+                let avg = 0;
+                for (i in data.datasets) {
+                    let meta = chart.getDatasetMeta(i);
+                    let dataset = chart.data.datasets[i];
+                    let inverter = dataset.inverter;
+                    let isHidden = meta.hidden === null ? false : meta.hidden;
+                    if (dataset.isData && !isHidden) {
+                        totalValue += parseInt(dataJS[inverter].totalValue);
+                        peak += parseInt(dataJS[inverter].peak);
+                        max += parseFloat(dataJS[inverter].max);
+                        avg += parseFloat(dataJS[inverter].avg);
+                    }
+                }
+                if (peak === 0) {
+                    total_kWp = totalValue;
+                    max_kWp = max;
+                } else {
+                    total_kWp = (totalValue / peak).toFixed(2);
+                    max_kWp = (max / peak).toFixed(2);
+                }
+
+                let out = [txt["year"] + " " + new Date().getFullYear() + ":  " + txt["sum"] + " " + totalValue + "kWh = " + total_kWp + "kWh/kWp",
+                    txt["max"] + ": " + max.toFixed(2) + "kWh = " + max_kWp + "kWh/kWp - " + txt["avg"] +" " + avg.toFixed(2) + "kWh "];
+
+                return out;
+            }
+
             const ctx = document.getElementById('year_chart_canvas').getContext("2d");
 
             Chart.defaults.color = '<?= $colors['color_chart_text_title'] ?>';
@@ -286,8 +326,10 @@ $subtitle = getTxt("total") . ": $totalYear kWh";
                 data: {
                     labels: [<?= $labels ?>],
                     datasets: [<?= $strdataseries  ?>],
+                    dataJS: <?= json_encode($dataJS)  ?>,
                     myColors: <?= json_encode(colorsPerInverterJS()) ?>,
                     maxIndex: <?= $maxIndex ?>,
+                    txt: <?= json_encode($_SESSION['txt']); ?>
                 },
                 options: {
                     maintainAspectRatio: false,
@@ -355,7 +397,9 @@ $subtitle = getTxt("total") . ": $totalYear kWh";
                         },
                         subtitle: {
                             display: true,
-                            text: '<?= $subtitle ?>',
+                            text: function (ctx) {
+                                return buildSubtitle(ctx)
+                            },
                             padding: {top: 5, left: 0, right: 0, bottom: 3},
                         },
                     },

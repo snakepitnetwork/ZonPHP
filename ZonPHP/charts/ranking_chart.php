@@ -83,13 +83,16 @@ $myurl = HTML_PATH . "pages/day.php?date=";
 $myMetadata = array();
 $myColors = colorsPerInverter();
 $plantNames = "";
+$plantNamesJS = "";
 $strdataseries = "";
 $strdata = "";
 $maxval_yaxis = 0;
 $labels = convertValueArrayToDataString($adatum);
 
+
 foreach (PLANT_NAMES as $key => $inverter_name) {
     $plantNames .= "'$inverter_name',";
+    $plantNamesJS .= "$inverter_name,";
     $strdata = "";
     $local_max = 0;
     $myColor1 = $myColors[$inverter_name]['min'];
@@ -142,7 +145,7 @@ if ($isIndexPage) {
             <canvas id="day_ranking_chart_canvas"></canvas>
          </div>';
     $show_legende = "false";
-    $subtitle = "['']";
+    $subtitle = "'" . strip($plantNamesJS) . "'";
 } else {
     $subtitle = "['" . implode(", ", $selectedYears) . "', '" . $legendMonth . "']";
 }
