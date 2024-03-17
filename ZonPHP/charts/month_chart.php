@@ -17,16 +17,16 @@ $showAllInverters = true;
 if (isset($_POST['action']) && ($_POST['action'] == "indexpage")) {
     $isIndexPage = true;
 }
+
 // -----------------------------  get data from DB -----------------------------------------------------------------
 $current_year = date('Y', $chartdate);
 $current_month = intval(date('m', $chartdate));
 $current_year_month = date('Y-m', $chartdate);
 
 // get reference values
-$nfrefmaand = array();
+$refValuePerMonth = array();
 foreach (PLANT_NAMES as $plant) {
-    $tmp = $params[$plant]['expectedYield'][$current_month - 1] / 30;
-    $nfrefmaand[$plant] = $tmp;
+    $refValuePerMonth[$plant] = $params[$plant]['expectedYield'][$current_month - 1] / 30;;
 }
 
 $DaysPerMonth = cal_days_in_month(CAL_GREGORIAN, $current_month, $current_year);
@@ -37,142 +37,101 @@ $sql = "SELECT Datum_Maand, Geg_Maand, naam
         GROUP BY Naam, Datum_Maand, Geg_Maand
         ORDER BY Naam, Datum_Maand ASC";
 $result = mysqli_query($con, $sql) or die("Query failed. maand " . mysqli_error($con));
-$daycount = 0;
-$all_valarray = array();
+
+$allValuesPerInverter = array();
 $monthTotal = 0.0;
+$formatter->setPattern('LLLL yyyy');
 if (mysqli_num_rows($result) == 0) {
-    $formatter->setPattern('LLLL yyyy');
     $datum = getTxt("nodata") . datefmt_format($formatter, $chartdate);
-    $agegevens[] = 0;
-    $geengevmaand = 0;
-    $fgemiddelde = 0;
 } else {
-    $formatter->setPattern('LLL yyyy');
     $datum = datefmt_format($formatter, $chartdate);
-    $geengevmaand = 1;
-    $agegevens = array();
-    // fill empty days
-    for ($i = 1; $i <= $DaysPerMonth; $i++) {
-        $agegevens[$i] = 0;
-    }
+
     for ($k = 0; $k < count(PLANT_NAMES); $k++) {
         for ($i = 1; $i <= $DaysPerMonth; $i++) {
-            $all_valarray[$i][PLANT_NAMES[$k]] = 0;
+            $allValuesPerInverter[PLANT_NAMES[$k]][$i] = 0;
         }
     }
     while ($row = mysqli_fetch_array($result)) {
         $inverter_name = $row['naam'];
-        $adatum[] = date("j", strtotime($row['Datum_Maand']));
-        $agegevens[date("j", strtotime($row['Datum_Maand']))] += $row['Geg_Maand'];
-        $all_valarray[date("j", strtotime($row['Datum_Maand']))] [$inverter_name] = $row['Geg_Maand'];
+        $allValuesPerInverter[$inverter_name][date("j", strtotime($row['Datum_Maand']))] = $row['Geg_Maand'];
         $monthTotal += $row['Geg_Maand'];
-        $dmaandjaar[] = $row['Datum_Maand'];
-
     }
-    $daycount = 0;
-    for ($i = 1; $i <= $DaysPerMonth; $i++) {
-        if ($agegevens[$i] > 0) {
-            $daycount++;
-        }
-    }
-    if ($daycount == 0) {
-        $daycount = 1;
-    }
-    $fgemiddelde = array_sum($agegevens) / $daycount;
-    $iyasaanpassen = round(0.5 + max($agegevens) / 5) * 5;
-}
-//  new average
-$sqlavg = "SELECT Naam, MONTH( Datum_Maand ) AS Maand, ROUND( SUM( Geg_Maand ) / COUNT( DISTINCT (
-YEAR( Datum_Maand ) ) ) , 0
-) AS AVG
-FROM " . TABLE_PREFIX . "_maand
-WHERE MONTH( Datum_Maand ) = " . $current_month . "
-GROUP BY Naam, MONTH( Datum_Maand ) 
-ORDER BY naam ASC ";
-$result = mysqli_query($con, $sqlavg) or die("Query failed (gemiddelde) " . mysqli_error($con));
-while ($row = mysqli_fetch_array($result)) {
-    $avg_data[$row['Naam']] = $row['AVG'];
 }
 
 ?>
 
 <?php
 // -----------------------------  build data for chart -----------------------------------------------------------------
-// build colors per inverter array
 $myColors = colorsPerInverter();
-// collect data array
 $myurl = HTML_PATH . "pages/day.php?date=";
-$strdataseries = "";
-$maxval_yaxis = 0;
-$myColor1 = "'#FFAABB'";
-$myColor2 = "'#FFAABB'";
+$allDataSeriesString = "";
 $labels = "";
-
 $totalsumCumArray = array();
-$dataJS = array();
+$dataZonPHP = array();
+$sumAverage = 0.0;
+$sumExpected = 0.0;
 for ($i = 1; $i <= $DaysPerMonth; $i++) {
     $labels .= '"' . $i . '",';
     $totalsumCumArray[$i] = 0.0;
 }
-$cnt = 0;
-$cumData = "";
-$sumAverage = 0.0;
-$sumExpected = 0.0;
 
 foreach (PLANT_NAMES as $inverter_name) {
-    $cnt++;
-    $strdata = "";
-    $local_max = 0;
+    $dataSeriesString = "";
+    $cumData = "";
     $cumSum = 0;
-    $inverterAverage = $avg_data[$inverter_name] / $DaysPerMonth;
-    $inverterExpected = $nfrefmaand[$inverter_name];
-    // sum average for all inverter
-    $sumAverage += $inverterAverage;
+    $maxMonthValue = 0;
+    $maxMonthDay = 0;
+    $inverterExpected = $refValuePerMonth[$inverter_name];
     $sumExpected += $inverterExpected;
+    $lastDayWithValues = 1;
 
-    $myColor1 = $myColors[$inverter_name]['min'];
-    $myColor2 = $myColors[$inverter_name]['max'];
-    $myMaxColor1 = "'" . $colors['color_chartbar_piek1'] . "'";
-    $myMaxColor2 = "'" . $colors['color_chartbar_piek2'] . "'";
-    $maxIndex = 0;
-    for ($i = 1; $i <= $DaysPerMonth; $i++) {
-        if (array_key_exists($i, $agegevens)) {
-            if ($agegevens[$i] == max($agegevens)) {
-                $maxIndex = $i;
+    if (isset($allValuesPerInverter[$inverter_name])) {
+        $valuesPerMonth = $allValuesPerInverter[$inverter_name];
+        $maxMonthValue = round(max($valuesPerMonth), 2);
+        for ($i = 1; $i <= $DaysPerMonth; $i++) {
+            if (isset($valuesPerMonth[$i])) {
+                $val = round($valuesPerMonth[$i], 2);
+            } else {
+                $val = 0;
             }
-            $val = round($all_valarray[$i][$inverter_name], 2);
-            if ($val > $local_max) $local_max = $val;
             $formattedHref = sprintf("%s%04d-%02d-%02d", $myurl, $current_year, $current_month, $i);
-            $strdata .= " { x: $i, y: $val, url: \"$formattedHref\"},";
+            $dataSeriesString .= " { x: $i, y: $val, url: \"$formattedHref\"},";
             $cumSum += $val;
             $cumData .= " { x: $i, y: $cumSum},";
             $totalsumCumArray[$i] = $totalsumCumArray[$i] + $cumSum;
+            if ($val == $maxMonthValue) {
+                $maxMonthDay = $i;
+            }
+            if ($val > 0) {
+                $lastDayWithValues = $i;
+            }
         }
+        $inverterAverage = array_sum($valuesPerMonth) / $lastDayWithValues;
+        $sumAverage += $inverterAverage;
     }
 
-    $maxval_yaxis += $local_max;
-    $dataJS["date"] = $datum ;
-    $dataJS[$inverter_name]['totalValue'] = $cumSum;
-    $dataJS[$inverter_name]['peak'] = $params[$inverter_name]["capacity"];
-    $dataJS[$inverter_name]['max'] = $maxval_yaxis;
-    $dataJS[$inverter_name]['avg'] = $inverterAverage;
-    $dataJS[$inverter_name]['ref'] = $nfrefmaand[$inverter_name];
+    $dataZonPHP["date"] = $datum;
+    $dataZonPHP[$inverter_name]['totalValue'] = $cumSum;
+    $dataZonPHP[$inverter_name]['peak'] = intval($params[$inverter_name]["capacity"]);
+    $dataZonPHP[$inverter_name]['max'] = $maxMonthValue;
+    $dataZonPHP[$inverter_name]['avg'] = $inverterAverage;
+    $dataZonPHP[$inverter_name]['ref'] = $refValuePerMonth[$inverter_name];
 
-    $strdata = substr($strdata, 0, -1);
-    $strdataseries .= " {
+    $dataSeriesString = substr($dataSeriesString, 0, -1);
+    $allDataSeriesString .= " {
                     datasetId: '" . $inverter_name . "', 
                     label: '" . $inverter_name . "', 
                     inverter: '" . $inverter_name . "',
                     type: 'bar',                               
                     stack: 'Stack 0',
                     borderWidth: 1,
-                    data: [" . $strdata . "],                    
+                    data: [" . $dataSeriesString . "],                    
                     dataCUM: [" . $cumData . "],
                     dataMAX: [], 
                     dataREF: [],
                     averageValue: " . $inverterAverage . ",
-                    expectedValue: " . $nfrefmaand[$inverter_name] . ",
-                    maxIndex: " . $maxIndex . ",
+                    expectedValue: " . $refValuePerMonth[$inverter_name] . ",
+                    maxIndex: " . $maxMonthDay . ",
                     fill: true,
                     backgroundColor: customGradientBackground,
                     yAxisID: 'y',
@@ -180,11 +139,10 @@ foreach (PLANT_NAMES as $inverter_name) {
                     isData: true,
                 },
     ";
-    $cumData = "";
 }
 
 // average
-$strdataseries .= " {
+$allDataSeriesString .= " {
                     datasetId: 'avg', 
                     label: '" . getTxt("average") . "', 
                     type: 'line',      
@@ -203,7 +161,7 @@ $strdataseries .= " {
     ";
 
 // expected
-$strdataseries .= " {
+$allDataSeriesString .= " {
                     datasetId: 'expected', 
                     label: '" . getTxt("ref") . "', 
                     type: 'line',      
@@ -222,7 +180,7 @@ $strdataseries .= " {
     ";
 
 // cumulative
-$strdataseries .= " {
+$allDataSeriesString .= " {
                     datasetId: 'cum', 
                     label: '" . getTxt("cum") . "', 
                     type: 'line',      
@@ -256,25 +214,25 @@ $monthTotal = round($monthTotal, 2);
             function buildSubtitle(ctx) {
                 let chart = ctx.chart;
                 let data = ctx.chart.data;
-                let dataJS = data.dataJS;
+                let dataZonPHP = data.dataZonPHP;
                 let txt = data.txt;
                 let totalValue = 0;
                 let peak = 0;
                 let max = 0;
                 let avg = 0;
                 let ref = 0;
-                let datetxt = dataJS['date'];
+                let datetxt = dataZonPHP['date'];
                 for (i in data.datasets) {
                     let meta = chart.getDatasetMeta(i);
                     let dataset = chart.data.datasets[i];
                     let inverter = dataset.inverter;
                     let isHidden = meta.hidden === null ? false : meta.hidden;
                     if (dataset.isData && !isHidden) {
-                        totalValue += parseInt(dataJS[inverter].totalValue);
-                        peak += parseInt(dataJS[inverter].peak);
-                        max += parseFloat(dataJS[inverter].max);
-                        avg += parseFloat(dataJS[inverter].avg);
-                        ref += parseFloat(dataJS[inverter].ref);
+                        totalValue += parseInt(dataZonPHP[inverter].totalValue);
+                        peak += parseInt(dataZonPHP[inverter].peak);
+                        max += parseFloat(dataZonPHP[inverter].max);
+                        avg += parseFloat(dataZonPHP[inverter].avg);
+                        ref += parseFloat(dataZonPHP[inverter].ref);
                     }
                 }
                 if (peak === 0) {
@@ -282,11 +240,11 @@ $monthTotal = round($monthTotal, 2);
                     max_kWp = max;
                 } else {
                     total_kWp = (totalValue / peak).toFixed(2);
-                    max_kWp = (max / peak).toFixed(2);
+                    max_kWp = (max * 1000 / peak).toFixed(2);
                 }
 
                 let out = [datetxt + ": " + txt["sum"] + " " + totalValue + "kWh = " + total_kWp + "kWh/kWp",
-                    txt["max"] + ":" + max.toFixed(2) + "kWh = " + max_kWp + "kWh/kWp - " + txt["avg"] +" "+ avg.toFixed(2) + "kWh " + txt["ref"] + ": " + ref.toFixed(2) + "kWh"];
+                    txt["max"] + ":" + max.toFixed(2) + "kWh = " + max_kWp + "kWh/kWp - " + txt["avg"] + " " + avg.toFixed(2) + "kWh " + txt["ref"] + ": " + ref.toFixed(2) + "kWh"];
 
                 return out;
             }
@@ -297,10 +255,10 @@ $monthTotal = round($monthTotal, 2);
             new Chart(ctx, {
                 data: {
                     labels: [<?= $labels ?>],
-                    datasets: [<?= $strdataseries  ?>],
-                    dataJS: <?= json_encode($dataJS)  ?>,
+                    datasets: [<?= $allDataSeriesString  ?>],
+                    dataZonPHP: <?= json_encode($dataZonPHP)  ?>,
                     myColors: <?= json_encode(colorsPerInverterJS()) ?>,
-                    maxIndex: <?= $maxIndex ?>,
+                    maxIndex: <?= $maxMonthDay ?>,
                     txt: <?= json_encode($_SESSION['txt']); ?>
                 },
                 options: {

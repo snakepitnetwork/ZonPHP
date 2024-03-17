@@ -27,35 +27,16 @@ $sql = "SELECT MAX( Datum_Maand ) AS maxi, SUM( Geg_Maand ) AS som, COUNT(Geg_Ma
 	GROUP BY naam, month(Datum_Maand)
 	ORDER BY naam ASC";
 $result = mysqli_query($con, $sql) or die("Query failed. jaar " . mysqli_error($con));
-$all_valarray = array();
-$inveter_list = array();
+$allValuesPerInverter = array();
+
 if (mysqli_num_rows($result) == 0) {
     $datum = getTxt("nodata") . date("Y", $chartdate);
 } else {
     while ($row = mysqli_fetch_array($result)) {
         $inverter_name = $row['naam'];
-        $all_valarray[$inverter_name][date("n", strtotime($row['maxi']))] = $row['som'];
-
-        if (!in_array($inverter_name, $inveter_list)) {
-            if (in_array($inverter_name, PLANT_NAMES)) {
-                // add to list only if it configured (ignore db entries)
-                $inveter_list[] = $inverter_name;
-            }
-        }
+        $allValuesPerInverter[$inverter_name][date("n", strtotime($row['maxi']))] = $row['som'];
     }
     $datum = date("Y", $chartdate);
-}
-
-$sqlavg = "SELECT ROUND( SUM( Geg_Maand ) / ( COUNT( Geg_Maand ) /30 ) , 0 ) AS aantal
-FROM " . TABLE_PREFIX . "_maand
-WHERE DATE_FORMAT( Datum_Maand,  '%y' ) =  '" . date('y', $chartdate) . "'
-GROUP BY naam
-ORDER BY naam ASC";
-
-$avg_data = array();
-$result = mysqli_query($con, $sqlavg) or die("Query failed (gemiddelde) " . mysqli_error($con));
-while ($row = mysqli_fetch_array($result)) {
-    $avg_data[] = $row['aantal'];
 }
 
 // fetch max values for all months and inverters
@@ -82,51 +63,51 @@ $my_year = date("Y", $chartdate);
 $myurl = HTML_PATH . "pages/month.php?date=";
 
 $maxIndex = 99;
-$strdataseries = "";
+$allDataSeriesString = "";
 $totalYear = 0.0;
 $sumAverage = 0.0;
 $sumExpected = 0.0;
-$dataJS = array();
+$inverterCounter = 0;
+$dataZonPHP = array();
 $totalsumCumArray = array();
 $totalsumMaxArray = array();
 $totalsumRefArray = array();
-$sumPerMonthArray = array();
+$totalValueSumPerMonth = array();
 for ($i = 1; $i <= 12; $i++) {
     $totalsumCumArray[$i] = 0.0;
     $totalsumMaxArray[$i] = 0.0;
     $totalsumRefArray[$i] = 0.0;
-    $sumPerMonthArray[$i] = 0.0;
+    $totalValueSumPerMonth[$i] = 0.0;
 }
 
 foreach (PLANT_NAMES as $key => $inverter_name) {
+    $inverterCounter++;
     $cumSum = 0;
     $dash = '';
-    $strdata = "";
+    $dataSeriesString = "";
     $maxData = "";
     $cumData = "";
     $refData = "";
+    $lastMonthWithValues = 1;
 
-    $inverterAverage = array_sum($all_valarray[$inverter_name]) / 12;
-    $sumAverage += $inverterAverage;
     for ($i = 1; $i <= 12; $i++) {
         $maxVal = round($maxPerMonth[$i][$inverter_name], 2);
         $formattedHref = sprintf("%s%04d-%02d-%02d", $myurl, $my_year, $i, 1);
         $maxData .= " { x: $i, y:  $maxVal},";
         $totalsumMaxArray[$i] += $maxVal;
 
-        $myColor1 = $myColors[$inverter_name]['min'];
-        $myColor2 = $myColors[$inverter_name]['max'];
-        $myMaxColor1 = "'" . $colors['color_chartbar_piek1'] . "'";
-        $myMaxColor2 = "'" . $colors['color_chartbar_piek2'] . "'";
-
         $val = 0.0;
-        if (isset($all_valarray[$inverter_name][$i])) {
-            $val = round($all_valarray[$inverter_name][$i], 2);
-            $sumPerMonthArray[$i] += $val;
+        if (isset($allValuesPerInverter[$inverter_name][$i])) {
+            $val = round($allValuesPerInverter[$inverter_name][$i], 2);
+            $totalValueSumPerMonth[$i] += $val;
             $totalYear += $val;
         }
+        if ($val > 0) {
+            $lastMonthWithValues = $i;
+        }
+
         $formattedHref = sprintf("%s%04d-%02d-%02d", $myurl, $my_year, $i, 1);
-        $strdata .= " { x: $i, y: $val, url: \"$formattedHref\"},";
+        $dataSeriesString .= " { x: $i, y: $val, url: \"$formattedHref\"},";
         $cumSum += $val;
         $cumData .= " { x: $i, y: $cumSum},";
         $totalsumCumArray[$i] = $totalsumCumArray[$i] + $cumSum;
@@ -135,12 +116,14 @@ foreach (PLANT_NAMES as $key => $inverter_name) {
         $refData .= " { x: $i, y: $refValue},";
         $totalsumRefArray[$i] = $totalsumRefArray[$i] + $refValue;
     }
-    $maxMonthVal = max($sumPerMonthArray);
-    $dataJS[$inverter_name]['totalValue'] = $cumSum;
-    $dataJS[$inverter_name]['peak'] = $params[$inverter_name]["capacity"];
-    $dataJS[$inverter_name]['avg'] = $inverterAverage;
-    $dataJS[$inverter_name]['max'] = $maxMonthVal;
-    $strdataseries .= " {
+    $inverterAverage = array_sum($allValuesPerInverter[$inverter_name]) / $lastMonthWithValues;
+    $sumAverage += $inverterAverage;
+    $maxMonthVal = max($totalValueSumPerMonth);
+    $dataZonPHP[$inverter_name]['totalValue'] = $cumSum;
+    $dataZonPHP[$inverter_name]['peak'] = $params[$inverter_name]["capacity"];
+    $dataZonPHP[$inverter_name]['avg'] = $inverterAverage;
+    $dataZonPHP[$inverter_name]['max'] = $maxMonthVal;
+    $allDataSeriesString .= " {
                     order: 1,  
                     datasetId: '" . $inverter_name . "', 
                     label: '" . $inverter_name . "', 
@@ -148,7 +131,7 @@ foreach (PLANT_NAMES as $key => $inverter_name) {
                     type: 'bar',                               
                     stack: 'Stack 0',
                     borderWidth: 1,
-                    data: [" . $strdata . "],                    
+                    data: [" . $dataSeriesString . "],                    
                     dataCUM: [" . $cumData . "],
                     dataMAX: [" . $maxData . "],                    
                     dataREF: [" . $refData . "],                    
@@ -159,6 +142,7 @@ foreach (PLANT_NAMES as $key => $inverter_name) {
                     backgroundColor: customGradientBackground,
                     yAxisID: 'y',
                     isData: true,
+                    legendOrder: " . $inverterCounter . ", 
                 },
     ";
 }
@@ -166,14 +150,13 @@ foreach (PLANT_NAMES as $key => $inverter_name) {
 $maxIndex = 99;
 for ($i = 1; $i <= 12; $i++) {
     // find max value
-    if ($sumPerMonthArray[$i] == $maxMonthVal) {
-        $maxIndex = $i - 1;
+    if ($totalValueSumPerMonth[$i] == $maxMonthVal) {
+        $maxIndex = $i;
     }
 }
 
-
 // max bars
-$strdataseries .= " {
+$allDataSeriesString .= " {
                     order: 5,  
                     datasetId: 'max', 
                     label: 'max', 
@@ -188,12 +171,13 @@ $strdataseries .= " {
                     yAxisID: 'y',
                     fill: false,   
                     showLine: true,
-                    isData: false,               
+                    isData: false,
+                    legendOrder: 500,                
                 },
     ";
 
 // average
-$strdataseries .= " {
+$allDataSeriesString .= " {
                     datasetId: 'avg', 
                     label: '" . getTxt("average") . "', 
                     type: 'line',      
@@ -207,12 +191,13 @@ $strdataseries .= " {
                     xAxisID: 'x-axis-lines',
                     fill: false,   
                     showLine: true,
-                    isData: false,               
+                    isData: false,   
+                    legendOrder: 100,            
                 },
     ";
 
 // cumulative
-$strdataseries .= " {
+$allDataSeriesString .= " {
                     order: 10,  
                     datasetId: 'cum', 
                     label: '" . getTxt("cum") . "', 
@@ -226,12 +211,13 @@ $strdataseries .= " {
                     yAxisID: 'y-axis-cum',      
                     xAxisID: 'x-axis-lines',                 
                     showLine: false,
-                    isData: false,               
+                    isData: false,
+                    legendOrder: 300,               
                 },
     ";
 
 // reference per month
-$strdataseries .= " {
+$allDataSeriesString .= " {
                     order: 0,    
                     datasetId: 'ref', 
                     label: '" . getTxt("reference") . "', 
@@ -260,10 +246,10 @@ $strdataseries .= " {
                     borderWidth: 1,                    
                     yAxisID: 'y',      
                     xAxisID: 'x-axis-ref',                                     
-                    isData: false,               
+                    isData: false, 
+                    legendOrder: 200,              
                 },
     ";
-
 
 $show_legende = "true";
 if ($isIndexPage) {
@@ -272,7 +258,6 @@ if ($isIndexPage) {
           </div>';
     $show_legende = "false";
 }
-
 
 $subtitle = getTxt("total") . ": $totalYear kWh";
 
@@ -287,7 +272,7 @@ $subtitle = getTxt("total") . ": $totalYear kWh";
             function buildSubtitle(ctx) {
                 let chart = ctx.chart;
                 let data = ctx.chart.data;
-                let dataJS = data.dataJS;
+                let dataZonPHP = data.dataZonPHP;
                 let txt = data.txt;
                 let totalValue = 0;
                 let peak = 0;
@@ -299,10 +284,10 @@ $subtitle = getTxt("total") . ": $totalYear kWh";
                     let inverter = dataset.inverter;
                     let isHidden = meta.hidden === null ? false : meta.hidden;
                     if (dataset.isData && !isHidden) {
-                        totalValue += parseInt(dataJS[inverter].totalValue);
-                        peak += parseInt(dataJS[inverter].peak);
-                        max += parseFloat(dataJS[inverter].max);
-                        avg += parseFloat(dataJS[inverter].avg);
+                        totalValue += parseInt(dataZonPHP[inverter].totalValue);
+                        peak += parseInt(dataZonPHP[inverter].peak);
+                        max += parseFloat(dataZonPHP[inverter].max);
+                        avg += parseFloat(dataZonPHP[inverter].avg);
                     }
                 }
                 if (peak === 0) {
@@ -314,7 +299,7 @@ $subtitle = getTxt("total") . ": $totalYear kWh";
                 }
 
                 let out = [txt["year"] + " " + new Date().getFullYear() + ":  " + txt["sum"] + " " + totalValue + "kWh = " + total_kWp + "kWh/kWp",
-                    txt["max"] + ": " + max.toFixed(2) + "kWh = " + max_kWp + "kWh/kWp - " + txt["avg"] +" " + avg.toFixed(2) + "kWh "];
+                    txt["max"] + ": " + max.toFixed(2) + "kWh = " + max_kWp + "kWh/kWp - " + txt["avg"] + " " + avg.toFixed(2) + "kWh "];
 
                 return out;
             }
@@ -325,8 +310,8 @@ $subtitle = getTxt("total") . ": $totalYear kWh";
             new Chart(ctx, {
                 data: {
                     labels: [<?= $labels ?>],
-                    datasets: [<?= $strdataseries  ?>],
-                    dataJS: <?= json_encode($dataJS)  ?>,
+                    datasets: [<?= $allDataSeriesString  ?>],
+                    dataZonPHP: <?= json_encode($dataZonPHP)  ?>,
                     myColors: <?= json_encode(colorsPerInverterJS()) ?>,
                     maxIndex: <?= $maxIndex ?>,
                     txt: <?= json_encode($_SESSION['txt']); ?>
@@ -391,7 +376,11 @@ $subtitle = getTxt("total") . ": $totalYear kWh";
                             display: <?= $show_legende ?>,
                             position: 'bottom',
                             labels: {
-                                filter: item => !item.text.includes('line')
+                                filter: item => !item.text.includes('line'),
+                                sort: function (li0, li1, chartData) {
+                                    let chart = chartData;
+                                    return (chart.datasets[li0.datasetIndex].legendOrder - chart.datasets[li1.datasetIndex].legendOrder)
+                                },
                             },
                             onClick: getCustomLegendClickHandler()
                         },

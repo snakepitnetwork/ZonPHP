@@ -36,7 +36,7 @@ $querydata = array();
 $totaldata = array();
 $names = array();
 $years = array();
-$dataJS = array();
+$dataZonPHP = array();
 if ($result->num_rows > 0) {
     while ($row = $result->fetch_assoc()) {
         $querydata[$row['Date']][$row['Name']] = $row['Yield'];
@@ -132,9 +132,9 @@ foreach ($valuesPerYear as $year => $allvalue) {
 $x = count($valuesPerYear);
 $xx = $totalCumSum;
 
-$dataJS['totalValue'] = $totalCumSum;
-$dataJS['avg'] = $totalCumSum / count($valuesPerYear);
-$dataJS['inverter'] = strip($visibleInvertersJS);
+$dataZonPHP['totalValue'] = $totalCumSum;
+$dataZonPHP['avg'] = $totalCumSum / count($valuesPerYear);
+$dataZonPHP['inverter'] = strip($visibleInvertersJS);
 
 $show_legende = "true";
 if ($isIndexPage) {
@@ -158,11 +158,11 @@ $labels = "";
             function buildSubtitle(ctx) {
                 let chart = ctx.chart;
                 let data = ctx.chart.data;
-                let dataJS = data.dataJS;
+                let dataZonPHP = data.dataZonPHP;
                 let txt = data.txt;
-                let totalValue = parseFloat(dataJS['totalValue']);
-                let avg = parseFloat(dataJS['avg']);
-                let inverter = dataJS['inverter'];
+                let totalValue = parseFloat(dataZonPHP['totalValue']);
+                let avg = parseFloat(dataZonPHP['avg']);
+                let inverter = dataZonPHP['inverter'];
                 let out = [
                     inverter + " - " + txt["total"] + ": " + (totalValue / 1000).toFixed(0) + "MWh",
                     txt["average"] + ":" + avg.toFixed(0) + "kWh"
@@ -177,7 +177,7 @@ $labels = "";
                 data: {
                     labels: [<?= $labels ?>],
                     datasets: [<?= $strdataseries  ?>],
-                    dataJS: <?= json_encode($dataJS)  ?>,
+                    dataZonPHP: <?= json_encode($dataZonPHP)  ?>,
                     txt: <?= json_encode($_SESSION['txt']); ?>
                 },
                 options: {

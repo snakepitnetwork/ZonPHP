@@ -50,18 +50,6 @@ if (count($acdatum) > 0) {
     $firstYear = 1970;
 }
 
-//  new average
-$sqlavg = "SELECT Naam, MONTH( Datum_Maand ) AS Maand, ROUND( SUM( Geg_Maand ) / COUNT( DISTINCT (
-YEAR( Datum_Maand ) ) ) , 0
-) AS AVG
-FROM " . TABLE_PREFIX . "_maand
-GROUP BY Naam, MONTH( Datum_Maand ) 
-ORDER BY naam ASC ";
-$result = mysqli_query($con, $sqlavg) or die("Query failed (gemiddelde) " . mysqli_error($con));
-while ($row = mysqli_fetch_array($result)) {
-    $avg_data[$row['Naam']][$row['Maand']] = $row['AVG'];
-}
-
 //	new reference
 $totalExpectedMonth = $params['totalExpectedMonth'];
 
@@ -92,30 +80,29 @@ if (mysqli_num_rows($resultmax) == 0) {
 <?php
 // -----------------------------  build data for chart -----------------------------------------------------------------
 $href = HTML_PATH . "pages/month.php?date=";
-$sum_per_month = array();
-$cnt_per_month = array();
+
 $totalsumMaxArray = array();
 $totalsAvgArray = array();
 
 for ($i = 1; $i <= 12; $i++) {
     $totalsumMaxArray[$i] = 0.0;
     $totalsAvgArray[$i] = 0.0;
-    $sum_per_month[$i] = 0.0;
-    $cnt_per_month[$i] = 0;
 }
 
 $my_year = date("Y", $chartdate);
-$strdataseries = "";
+$allDataSeriesString = "";
 $labels = $shortMonthLabels;
 
 $maxData = "";
 $avglines = "";
 $inverterAverage = 0;
 $colorzz = 0;
-$colori = 1;
+
 $plantNames = "";
 $lastInverter = "";
 $visibleInvertersJS = "";
+$sumPerInverterMonth = array();
+$totalAveragePerInverterMonth = array();
 foreach (PLANT_NAMES as $idxPlants => $inverter_name) {
     $lastInverter = $inverter_name;
     $plantNames .= "'$inverter_name',";
@@ -125,54 +112,22 @@ foreach (PLANT_NAMES as $idxPlants => $inverter_name) {
     $bdatum = array();
     $inverterAvgArray = array();
     $inverterMaxArray = array();
-
+    $cnt_per_month = array();
     if (isset($abdatum[$inverter_name])) {
         $bdatum = $abdatum[$inverter_name];
     }
 
     // collect data for max bars
     for ($i = 1; $i <= 12; $i++) {
+        $cnt_per_month[$i] = 0;
         if (!isset($maxPerMonth[$i][$inverter_name])) {
             $maxPerMonth[$i][$inverter_name] = 0;
         }
         $maxVal = round($maxPerMonth[$i][$inverter_name], 2);
         $inverterMaxArray[$i] = $maxVal;
         $totalsumMaxArray[$i] += $maxVal;
-
-        if (!isset($avg_data[$inverter_name][$i])) {
-            $avg_data[$inverter_name][$i] = 0;
-        }
-        $av = $avg_data[$inverter_name][$i];
-        $inverterAvgArray[$i] = $av;
-        $totalsAvgArray[$i] += $av;
     }
 
-    // Inverter Data with average values
-    $strdataseries .= "{
-                    order: 0,    
-                    datasetId: '" . $inverter_name . "', 
-                    inverter: '" . $inverter_name . "',
-                    label: '" . $inverter_name . "', 
-                    type: 'line',         
-                    radius:50,
-                    hoverRadius: 25,
-                    pointStyle: 'line',
-                    borderWidth: 4,
-                    stepped: true,
-                    showLine: false,                                                             
-                    data: [],
-                    dataAVG: [" . convertKeyValueArrayToDataString($inverterAvgArray) . "],
-                    dataMAX: [" . convertKeyValueArrayToDataString($inverterMaxArray) . "],
-                    fill: false,                    
-                    borderColor: '" . $colors['color_chart_reference_line'] . "',                
-                    borderWidth: 1,                    
-                    yAxisID: 'y',      
-                    xAxisID: 'x-axis-ref',                                     
-                    isData: false,               
-                },
-    ";
-    $inverterAvgArray = array();
-    $inverterMaxArray = array();
     $firstYear = date("Y", strtotime(STARTDATE));
     foreach ($bdatum as $year => $asy) {
 
@@ -180,7 +135,6 @@ foreach (PLANT_NAMES as $idxPlants => $inverter_name) {
             $current_bars = "";
             $my_year = 0;
             for ($i = 1; $i <= 12; $i++) {
-
                 if (array_key_exists($i, $asy)) {
                     $curYearVal = $asy[$i];
                     $cur_max = $maxmaand[$i];
@@ -193,20 +147,20 @@ foreach (PLANT_NAMES as $idxPlants => $inverter_name) {
                 }
 
                 $formattedHref = sprintf("%s%04d-%02d-%02d", $href, $my_year, $i, 1);
-                $sum_per_month[$i] = $sum_per_month[$i] + $curYearVal;
                 if ($curYearVal > 0.0) {
                     $cnt_per_month[$i]++;
                 }
 
-                if (!isset($avg_data[$inverter_name][$i])) {
-                    $avg_data[$inverter_name][$i] = 0;
+                if (!isset($sumPerInverterMonth[$inverter_name][$i])) {
+                    $sumPerInverterMonth[$inverter_name][$i] = 0;
                 }
-                $av = $avg_data[$inverter_name][$i];
+                $sumPerInverterMonth[$inverter_name][$i] += $curYearVal;
 
                 $formattedHref = sprintf("%s%04d-%02d-%02d", $href, $year, $i, 1);
                 $strdata .= " { x: $i, y: $curYearVal  },";
             }
-            $strdataseries .= " {
+
+            $allDataSeriesString .= " {
                     datasetId: '" . $inverter_name . $year . "', 
                     inverter: '" . $inverter_name . "',
                     label: '" . $inverter_name . $year . "_hidden', 
@@ -233,6 +187,40 @@ foreach (PLANT_NAMES as $idxPlants => $inverter_name) {
             } else $colorcnt++;
         }
     }
+    $averagePerInverterMonth = array();
+    for ($i = 1; $i <= 12; $i++) {
+        if (!isset($totalAveragePerInverterMonth[$i])) {
+            $totalAveragePerInverterMonth[$i] = 0;
+        }
+        $averagePerInverterMonth[$inverter_name][$i] = $sumPerInverterMonth[$inverter_name][$i] / $cnt_per_month[$i];
+        $totalAveragePerInverterMonth[$i] += $sumPerInverterMonth[$inverter_name][$i] / $cnt_per_month[$i];
+    }
+
+    $allDataSeriesString .= "{
+                    order: 0,    
+                    datasetId: '" . $inverter_name . "', 
+                    inverter: '" . $inverter_name . "',
+                    label: '" . $inverter_name . "', 
+                    type: 'line',         
+                    radius:50,
+                    hoverRadius: 25,
+                    pointStyle: 'line',
+                    borderWidth: 4,
+                    stepped: true,
+                    showLine: false,                                                             
+                    data: [],
+                    dataAVG: [" . convertKeyValueArrayToDataString($averagePerInverterMonth[$inverter_name]) . "],
+                    dataMAX: [" . convertKeyValueArrayToDataString($inverterMaxArray) . "],
+                    fill: false,                    
+                    borderColor: '" . $colors['color_chart_reference_line'] . "',                
+                    borderWidth: 1,                    
+                    yAxisID: 'y',      
+                    xAxisID: 'x-axis-ref',                                     
+                    isData: false,               
+                },
+    ";
+    $inverterAvgArray = array();
+    $inverterMaxArray = array();
 
     if ($colorzz == 3) {
         $colorzz = 0;
@@ -240,7 +228,7 @@ foreach (PLANT_NAMES as $idxPlants => $inverter_name) {
 }
 
 // max bars
-$strdataseries .= " {
+$allDataSeriesString .= " {
                     order: 5,  
                     datasetId: 'max', 
                     label: 'max', 
@@ -258,7 +246,7 @@ $strdataseries .= " {
                 },
     ";
 // Average
-$strdataseries .= "{
+$allDataSeriesString .= "{
                     order: 0,    
                     datasetId: 'avg', 
                     label: '" . getTxt("average") . "',                      
@@ -282,7 +270,7 @@ $strdataseries .= "{
                     borderWidth: 4,
                     stepped: true,
                     showLine: false,                                                             
-                    data: [" . convertValueArrayToDataString($totalsAvgArray) . "],
+                    data: [" . convertValueArrayToDataString($totalAveragePerInverterMonth) . "],
                     dataAVG: [" . convertValueArrayToDataString($totalsAvgArray) . "],
                     fill: false,                    
                     borderColor: '" . $colors['color_chart_average_line'] . "',                
@@ -364,7 +352,7 @@ if ($isIndexPage) {
                 data: {
                     labels: [<?= $labels ?>],
                     inverters: [<?= $plantNames ?>],
-                    datasets: [<?= $strdataseries  ?>],
+                    datasets: [<?= $allDataSeriesString  ?>],
                 },
                 options: {
                     maintainAspectRatio: false,

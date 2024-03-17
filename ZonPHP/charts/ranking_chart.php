@@ -47,19 +47,23 @@ $whereInClause = " where naam in ($visibleInvertersString)";
 
 if (isset($_GET['months']) && $_GET['months'] != "undefined" && $_GET['months'] != "") {
     $selectedMonths = explode(',', $_GET['months']);
+    $selectedMonthsString = $_GET['months'];
 } else {
     $selectedMonths = explode(',', $whereInMonth);
+    $selectedMonthsString = $whereInMonth;
 }
 
 if (isset($_GET['years']) && $_GET['years'] != "undefined" && $_GET['years'] != "") {
     $selectedYears = explode(",", $_GET['years']);
+    $selectedYearsString = $_GET['years'];
 } else {
     $selectedYears = $years;
+    $selectedYearsString = $whereInYear;
 }
 
 $sql = "SELECT db1.*
 FROM " . TABLE_PREFIX . "_maand AS db1
-JOIN (SELECT Datum_Maand, sum(Geg_Maand) as mysum FROM " . TABLE_PREFIX . "_maand $whereInClause  AND MONTH(Datum_Maand) IN ($whereInMonth) AND YEAR(Datum_Maand) IN ($whereInYear) Group by Datum_Maand ORDER BY mysum $sort LIMIT 0,31) AS db2
+JOIN (SELECT Datum_Maand, sum(Geg_Maand) as mysum FROM " . TABLE_PREFIX . "_maand $whereInClause  AND MONTH(Datum_Maand) IN ($selectedMonthsString) AND YEAR(Datum_Maand) IN ($selectedYearsString) Group by Datum_Maand ORDER BY mysum $sort LIMIT 0,31) AS db2
 ON db1.Datum_Maand = db2.Datum_Maand $whereInClause order by mysum $sort";
 //echo $sql;
 $result = mysqli_query($con, $sql) or die("Query failed. de_top_31_dagen " . mysqli_error($con));
@@ -89,7 +93,6 @@ $strdata = "";
 $maxval_yaxis = 0;
 $labels = convertValueArrayToDataString($adatum);
 
-
 foreach (PLANT_NAMES as $key => $inverter_name) {
     $plantNames .= "'$inverter_name',";
     $plantNamesJS .= "$inverter_name,";
@@ -98,13 +101,15 @@ foreach (PLANT_NAMES as $key => $inverter_name) {
     $myColor1 = $myColors[$inverter_name]['min'];
     $myColor2 = $myColors[$inverter_name]['max'];
 
-    for ($i = 0; $i <= 30; $i++) {
+    for ($i = 0; $i < count($adatum); $i++) {
         $val = 0.0;
-        if (isset($adatum[$i]) && isset($all_valarray[$adatum[$i]][$inverter_name])) {
-            $val = round($all_valarray[$adatum[$i]][$inverter_name], 2);
+        if (isset($adatum[$i])) {
+            if (isset($all_valarray[$adatum[$i]][$inverter_name])) {
+                $val = round($all_valarray[$adatum[$i]][$inverter_name], 2);
+            }
+            $formattedHref = sprintf("%s%s", $myurl, $adatum[$i],);
+            $strdata .= " { x: $adatum[$i], y: $val, url: '$formattedHref'},";
         }
-        $formattedHref = sprintf("%s%s", $myurl, $adatum[$i],);
-        $strdata .= " { x: $adatum[$i], y: $val, url: '$formattedHref'},";
     }
 
     $maxval_yaxis += $local_max;
@@ -181,12 +186,10 @@ if ($isIndexPage) {
         }
 
         let sort = "<?= $sort ?>";
-        const selectedMonths = $('#month_selection').val().join(',');
-        const selectedYears = $('#year_selection').val().join(',');
         window.location.href = "?sort=" + sort +
             "&inverters=" + stripLastChar(visibleInverters) +
-            "&months=" + selectedMonths +
-            "&years=" + selectedYears;
+            "&months=" + getSelectedMonths() +
+            "&years=" + getSelectedYears();
         chart.update();
     }
 

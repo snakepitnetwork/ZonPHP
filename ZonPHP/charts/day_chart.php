@@ -88,7 +88,7 @@ $labels = convertValueArrayToDataString($utcDateArray);
 // day max line per inverter --------------------------------------------------------------
 $inverterCount = 0;
 $totalsumCumArray = array();
-$dataJS = array();
+$dataZonPHP = array();
 $allDataSeriesString = "";
 $plantNames = "";
 foreach (PLANT_NAMES as $key => $inverter_name) {
@@ -120,12 +120,12 @@ foreach (PLANT_NAMES as $key => $inverter_name) {
             $totalsumCumArray[$timeInMillis] += $cumSum;
         }
 
-        $dataJS[$inverter_name]['totalValue'] = $cumSum;
-        $dataJS[$inverter_name]['peak'] = $params[$inverter_name]["capacity"];
-        $dataJS[$inverter_name]['lastDate'] = convertDateTimeToLocalDateTime(array_key_last($inverterValues), "H:i");
-        $dataJS[$inverter_name]['lastValue'] = end($inverterValues);
-        $dataJS[$inverter_name]['todayMax'] = max($inverterValues);
-        $dataJS[$inverter_name]['maxDay'] = $nice_max_date;
+        $dataZonPHP[$inverter_name]['totalValue'] = $cumSum;
+        $dataZonPHP[$inverter_name]['peak'] = $params[$inverter_name]["capacity"];
+        $dataZonPHP[$inverter_name]['lastDate'] = convertDateTimeToLocalDateTime(array_key_last($inverterValues), "H:i");
+        $dataZonPHP[$inverter_name]['lastValue'] = end($inverterValues);
+        $dataZonPHP[$inverter_name]['todayMax'] = max($inverterValues);
+        $dataZonPHP[$inverter_name]['maxDay'] = $nice_max_date;
 
         // Day line
         $allDataSeriesString .= " {
@@ -168,7 +168,7 @@ foreach (PLANT_NAMES as $key => $inverter_name) {
                 $inverterMaxDayCumSum += $currentVal / 12;
             }
         }
-        $dataJS[$inverter_name]['maxDayValue'] = $inverterMaxDayCumSum;
+        $dataZonPHP[$inverter_name]['maxDayValue'] = $inverterMaxDayCumSum;
         $allDataSeriesString .= " {
                     datasetId: 'max-" . $inverter_name . "', 
                     label: 'max-" . $inverter_name . "', 
@@ -283,7 +283,7 @@ if (strlen($str_temp_vals) > 0) {
             function buildSubtitle(ctx) {
                 let chart = ctx.chart;
                 let data = ctx.chart.data;
-                let dataJS = data.dataJS;
+                let dataZonPHP = data.dataZonPHP;
                 let txt = data.txt;
                 let totalValue = 0;
                 let lastDate = Date.now();
@@ -298,13 +298,13 @@ if (strlen($str_temp_vals) > 0) {
                     let inverter = dataset.inverter;
                     let isHidden = meta.hidden === null ? false : meta.hidden;
                     if (dataset.isData && !isHidden) {
-                        totalValue += parseInt(dataJS[inverter].totalValue);
-                        peak += parseInt(dataJS[inverter].peak);
-                        lastDate = dataJS[inverter].lastDate;
-                        lastValue += parseInt(dataJS[inverter].lastValue);
-                        todayMax += parseInt(dataJS[inverter].todayMax);
-                        maxDay = dataJS[inverter].maxDay;
-                        maxDayValue += parseInt(dataJS[inverter].maxDayValue);
+                        totalValue += parseInt(dataZonPHP[inverter].totalValue);
+                        peak += parseInt(dataZonPHP[inverter].peak);
+                        lastDate = dataZonPHP[inverter].lastDate;
+                        lastValue += parseInt(dataZonPHP[inverter].lastValue);
+                        todayMax += parseInt(dataZonPHP[inverter].todayMax);
+                        maxDay = dataZonPHP[inverter].maxDay;
+                        maxDayValue += parseInt(dataZonPHP[inverter].maxDayValue);
                     }
                 }
                 if (peak === 0) {
@@ -314,7 +314,7 @@ if (strlen($str_temp_vals) > 0) {
                 }
 
                 let out = [txt["today"] + " " + lastDate + " - " + lastValue + "W - " + txt["peak"] + ": " + todayMax + "W",
-                    txt["sum"] + " " + totalValue + "kWh = " + kWp + "kWh/kWp  - MAX: " + maxDay + " - " + maxDayValue + "kWh"];
+                    txt["sum"] + " " + (totalValue / 1000).toFixed(2) + "kWh = " + kWp + "kWh/kWp  - MAX: " + maxDay + " - " + (maxDayValue / 1000).toFixed(2) + "kWh"];
 
                 return out;
             }
@@ -378,7 +378,7 @@ if (strlen($str_temp_vals) > 0) {
                 data: {
                     labels: [],
                     datasets: [<?= $allDataSeriesString  ?>],
-                    dataJS: <?= json_encode($dataJS)  ?>,
+                    dataZonPHP: <?= json_encode($dataZonPHP)  ?>,
                     inverters: [<?= $plantNames ?>],
                     myColors: <?= json_encode(colorsPerInverterJS()) ?>,
                     txt: <?= json_encode($_SESSION['txt']); ?>

@@ -52,17 +52,6 @@ if (mysqli_num_rows($result) == 0) {
     }
 }
 
-// Average per inverter
-$avg_data = array();
-$sqltotal = "SELECT naam, ROUND((SUM( Geg_Maand ) /  COUNT( Geg_Maand ))* 365 , 0 ) AS grand_total_average 
-FROM " . TABLE_PREFIX . "_maand
-WHERE naam in ($inClause) 
-GROUP BY naam";
-$result = mysqli_query($con, $sqltotal) or die("Query failed (total average) " . mysqli_error($con));
-while ($row = mysqli_fetch_array($result)) {
-    $avg_data[$row['naam']] = $row['grand_total_average'];
-}
-
 ?>
 <?php
 // ----------------------------- build data for chart -----------------------------------------------------------------
@@ -70,7 +59,7 @@ $myurl = HTML_PATH . "pages/year.php?date=";
 $my_year = date("Y", time());
 
 $yearcount = count($sum_per_year);
-$strdataseries = "";
+$allDataSeriesString = "";
 $labels = "";
 $cumData = "";
 $cumSum = 0.0;
@@ -79,22 +68,16 @@ $sumExpected = 0.0;
 $myColors = colorsPerInverter();
 
 $totalsumCumArray = array();
-$dataJS = array();
+$dataZonPHP = array();
 foreach ($sum_per_year as $year => $fkw) {
     $labels .= '"' . $year . '",';
     $totalsumCumArray[$year] = 0.0;
 }
 
 foreach ($inveter_list as $inverter_name) {
-    $inverterAverage = $avg_data[$inverter_name];
     $inverterExpected = $params[$inverter_name]['totalExpectedYield'];
-    $strdata = "";
+    $dataSeriesString = "";
     $maxIndex = 0;
-    $myColor1 = $myColors[$inverter_name]['min'];
-    $myColor2 = $myColors[$inverter_name]['max'];
-    $myMaxColor1 = "'" . $colors['color_chartbar_piek1'] . "'";
-    $myMaxColor2 = "'" . $colors['color_chartbar_piek2'] . "'";
-    $sumAverage += $inverterAverage;
     $sumExpected += $inverterExpected;
     $cumSum = 0;
     $idx = 0;
@@ -106,27 +89,29 @@ foreach ($inveter_list as $inverter_name) {
         // normal chart, $val throws errors when missing inverter index
         @$val = round($fkw[$inverter_name], 2);
         $formattedHref = sprintf("%s%02d-%02d-%04d", $myurl, 1, 1, $ijaar);
-        $strdata .= " { x: $ijaar, y: $val, url: \"$formattedHref\"},";
+        $dataSeriesString .= " { x: $ijaar, y: $val, url: \"$formattedHref\"},";
         $cumSum += $val;
         $cumData .= " { x: $ijaar, y: $cumSum},";
         $totalsumCumArray[$ijaar] = $totalsumCumArray[$ijaar] + $cumSum;
         $idx++;
     }
+    $inverterAverage = $cumSum / count($sum_per_year);
+    $sumAverage += $inverterAverage;
 
-    $dataJS[$inverter_name]['totalValue'] = $cumSum;
-    $dataJS[$inverter_name]['peak'] = $params[$inverter_name]["capacity"];
-    $dataJS[$inverter_name]['max'] = $sumMaxYear[$inverter_name];
-    $dataJS[$inverter_name]['avg'] = $inverterAverage;
-    $dataJS[$inverter_name]['ref'] = $sumExpected;
+    $dataZonPHP[$inverter_name]['totalValue'] = $cumSum;
+    $dataZonPHP[$inverter_name]['peak'] = $params[$inverter_name]["capacity"];
+    $dataZonPHP[$inverter_name]['max'] = $sumMaxYear[$inverter_name];
+    $dataZonPHP[$inverter_name]['avg'] = $inverterAverage;
+    $dataZonPHP[$inverter_name]['ref'] = $sumExpected;
 
-    $strdataseries .= " {
+    $allDataSeriesString .= " {
                     datasetId: '" . $inverter_name . "', 
                     label: '" . $inverter_name . "', 
                     inverter: '" . $inverter_name . "', 
                     type: 'bar',                               
                     stack: 'Stack 0',
                     borderWidth: 1,
-                    data: [" . $strdata . "],                    
+                    data: [" . $dataSeriesString . "],                    
                     dataCUM: [" . $cumData . "],
                     dataMAX: [], 
                     dataREF: [],
@@ -143,7 +128,7 @@ foreach ($inveter_list as $inverter_name) {
 }
 
 // average
-$strdataseries .= " {
+$allDataSeriesString .= " {
                     datasetId: 'avg', 
                     label: '" . getTxt("average") . "', 
                     type: 'line',      
@@ -161,7 +146,7 @@ $strdataseries .= " {
     ";
 
 // expected
-$strdataseries .= " {
+$allDataSeriesString .= " {
                     datasetId: 'expected', 
                     label: '" . getTxt("ref") . "', 
                     type: 'line',      
@@ -179,7 +164,7 @@ $strdataseries .= " {
     ";
 
 //cumulative
-$strdataseries .= " {
+$allDataSeriesString .= " {
                     datasetId: 'cum', 
                     label: '" . getTxt("cum") . "', 
                     type: 'line',      
@@ -203,7 +188,6 @@ if ($isIndexPage) {
     $show_legende = "false";
 }
 
-
 ?>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4/dist/chart.umd.min.js"></script>
 <script src="<?= HTML_PATH ?>inc/js/chart_support.js"></script>
@@ -213,7 +197,7 @@ if ($isIndexPage) {
             function buildSubtitle(ctx) {
                 let chart = ctx.chart;
                 let data = ctx.chart.data;
-                let dataJS = data.dataJS;
+                let dataZonPHP = data.dataZonPHP;
                 let txt = data.txt;
                 let totalValue = 0;
                 let peak = 0;
@@ -226,11 +210,11 @@ if ($isIndexPage) {
                     let inverter = dataset.inverter;
                     let isHidden = meta.hidden === null ? false : meta.hidden;
                     if (dataset.isData && !isHidden) {
-                        totalValue += parseInt(dataJS[inverter].totalValue);
-                        peak += parseInt(dataJS[inverter].peak);
-                        max += parseFloat(dataJS[inverter].max);
-                        avg += parseFloat(dataJS[inverter].avg);
-                        ref += parseFloat(dataJS[inverter].ref);
+                        totalValue += parseInt(dataZonPHP[inverter].totalValue);
+                        peak += parseInt(dataZonPHP[inverter].peak);
+                        max += parseFloat(dataZonPHP[inverter].max);
+                        avg += parseFloat(dataZonPHP[inverter].avg);
+                        ref += parseFloat(dataZonPHP[inverter].ref);
                     }
                 }
                 if (peak === 0) {
@@ -242,7 +226,7 @@ if ($isIndexPage) {
                 }
 
                 let out = [txt["sum"] + " " + (totalValue/1000).toFixed(0) + "MWh = " + total_kWp + "kWh/kWp",
-                    txt["max"] + ":" + max.toFixed(0) + "kWh = " + max_kWp + "kWh/kWp - " + txt["avg"] +" " + avg.toFixed(0) + "kWh " + txt["ref"] + ": " + ref.toFixed(0) + "kWh"];
+                    txt["max"] + ":" + (max/1000).toFixed(2) + "MWh = " + max_kWp + "kWh/kWp - " + txt["avg"] +" " + (avg/1000).toFixed(2) + "MWh " + txt["ref"] + ": " + (ref/1000).toFixed(2) + "MWh"];
 
                 return out;
             }
@@ -253,8 +237,8 @@ if ($isIndexPage) {
             new Chart(ctx, {
                 data: {
                     labels: [<?= $labels ?>],
-                    datasets: [<?= $strdataseries  ?>],
-                    dataJS: <?= json_encode($dataJS)  ?>,
+                    datasets: [<?= $allDataSeriesString  ?>],
+                    dataZonPHP: <?= json_encode($dataZonPHP)  ?>,
                     myColors: <?= json_encode(colorsPerInverterJS()) ?>,
                     maxIndex: <?= $maxIndex ?>,
                     txt: <?= json_encode($_SESSION['txt']); ?>
