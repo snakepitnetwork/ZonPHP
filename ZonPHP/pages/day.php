@@ -52,13 +52,17 @@ $corners = 'border-bottom-left-radius: 0px !important; border-bottom-right-radiu
             <div class="block2">
                 <div class="inner">
                     <button class="btn btn-zonphp"
-                            onclick="window.location.href='?date=<?= date('Y-m-d', time()) ?>'"><?= getTxt("back_to_today") ?></button>
+                            onclick="window.location.href='?date=<?= date('Y-m-d', time()) ?>'"><?= getTxt("back_to_today") ?>
+                    </button>
                     <div class="inner">
                         <div class="input-group date" id="datepicker" data-date-format="yyyy-mm-dd">
                             <input type='hidden' id='untilDate' class="form-control">
                             <button class="btn btn-zonphp"><i class="fa fa-calendar"></i></button>
                         </div>
                     </div>
+                    <button class="btn btn-zonphp"
+                            onclick="window.location.href='?date=<?= $nice_max_date ?>'"><?= getTxt("max") ?>
+                    </button>
                 </div>
             </div>
         </div>

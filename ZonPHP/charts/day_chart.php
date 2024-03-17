@@ -314,7 +314,7 @@ if (strlen($str_temp_vals) > 0) {
                 }
 
                 let out = [txt["today"] + " " + lastDate + " - " + lastValue + "W - " + txt["peak"] + ": " + todayMax + "W",
-                    txt["sum"] + ":" + totalValue + "kWh = " + kWp + "kWh/kWp  - MAX: " + maxDay + " - " + maxDayValue + "kWh"];
+                    txt["sum"] + " " + totalValue + "kWh = " + kWp + "kWh/kWp  - MAX: " + maxDay + " - " + maxDayValue + "kWh"];
 
                 return out;
             }

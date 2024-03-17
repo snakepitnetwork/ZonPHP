@@ -241,7 +241,7 @@ if ($isIndexPage) {
                     max_kWp = (max / peak).toFixed(2);
                 }
 
-                let out = [txt["sum"] + ": " + (totalValue/1000).toFixed(0) + "MWh = " + total_kWp + "kWh/kWp",
+                let out = [txt["sum"] + " " + (totalValue/1000).toFixed(0) + "MWh = " + total_kWp + "kWh/kWp",
                     txt["max"] + ":" + max.toFixed(0) + "kWh = " + max_kWp + "kWh/kWp - " + txt["avg"] +" " + avg.toFixed(0) + "kWh " + txt["ref"] + ": " + ref.toFixed(0) + "kWh"];
 
                 return out;
