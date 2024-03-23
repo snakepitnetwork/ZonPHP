@@ -116,7 +116,10 @@ foreach (PLANT_NAMES as $key => $inverter_name) {
         $refData .= " { x: $i, y: $refValue},";
         $totalsumRefArray[$i] = $totalsumRefArray[$i] + $refValue;
     }
-    $inverterAverage = array_sum($allValuesPerInverter[$inverter_name]) / $lastMonthWithValues;
+    $inverterAverage = 0;
+    if (isset($allValuesPerInverter[$inverter_name])) {
+        $inverterAverage = array_sum($allValuesPerInverter[$inverter_name]) / $lastMonthWithValues;
+    }
     $sumAverage += $inverterAverage;
     $maxMonthVal = max($totalValueSumPerMonth);
     $dataZonPHP[$inverter_name]['totalValue'] = $cumSum;

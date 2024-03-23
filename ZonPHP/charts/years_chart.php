@@ -12,7 +12,6 @@ if (isset($_POST['action']) && ($_POST['action'] == "indexpage")) {
 
 // -----------------------------  get data from DB -----------------------------------------------------------------
 $datum = "";
-$inveter_list = array();
 $inClause = "'" . implode("', '", PLANT_NAMES) . "'";
 // load sum per month for all years --------------------------------------------------------------------------------
 $sql = "SELECT SUM( Geg_Maand ) AS sum_month, year( Datum_Maand ) AS year, month( Datum_Maand ) AS month, naam, 
@@ -39,12 +38,6 @@ if (mysqli_num_rows($result) == 0) {
         $sum_per_year[$row['year']][$inverter_name] += $row['sum_month'];
 
         $days_per_month = cal_days_in_month(CAL_GREGORIAN, $row['month'], $row['year']);
-        if (!in_array($inverter_name, $inveter_list)) {
-            if (in_array($inverter_name, PLANT_NAMES)) {
-                // add to list only if it configured (ignore db entries)
-                $inveter_list[] = $inverter_name;
-            }
-        }
     }
 
     foreach ($sum_per_year as $inverter_name => $val) {
@@ -66,15 +59,16 @@ $cumSum = 0.0;
 $sumAverage = 0.0;
 $sumExpected = 0.0;
 $myColors = colorsPerInverter();
-
+$inverterCounter = 0;
 $totalsumCumArray = array();
 $dataZonPHP = array();
-foreach ($sum_per_year as $year => $fkw) {
+foreach ($sum_per_year as $year => $yearSum) {
     $labels .= '"' . $year . '",';
     $totalsumCumArray[$year] = 0.0;
 }
 
-foreach ($inveter_list as $inverter_name) {
+foreach (PLANT_NAMES as $inverter_name) {
+    $inverterCounter++;
     $inverterExpected = $params[$inverter_name]['totalExpectedYield'];
     $dataSeriesString = "";
     $maxIndex = 0;
@@ -82,17 +76,19 @@ foreach ($inveter_list as $inverter_name) {
     $cumSum = 0;
     $idx = 0;
     $sumMaxYear = max($sum_per_year);
-    foreach ($sum_per_year as $ijaar => $fkw) {
-        if ($fkw >= $sumMaxYear) {
-            $maxIndex = $idx;
+    foreach ($sum_per_year as $year => $yearSum) {
+        if ($yearSum >= $sumMaxYear) {
+            $maxIndex = $idx + 1;
         }
-        // normal chart, $val throws errors when missing inverter index
-        @$val = round($fkw[$inverter_name], 2);
-        $formattedHref = sprintf("%s%02d-%02d-%04d", $myurl, 1, 1, $ijaar);
-        $dataSeriesString .= " { x: $ijaar, y: $val, url: \"$formattedHref\"},";
+        $val = 0.0;
+        if (isset($yearSum[$inverter_name])) {
+            $val = round($yearSum[$inverter_name], 2);
+        }
+        $formattedHref = sprintf("%s%02d-%02d-%04d", $myurl, 1, 1, $year);
+        $dataSeriesString .= " { x: $year, y: $val, url: \"$formattedHref\"},";
         $cumSum += $val;
-        $cumData .= " { x: $ijaar, y: $cumSum},";
-        $totalsumCumArray[$ijaar] = $totalsumCumArray[$ijaar] + $cumSum;
+        $cumData .= " { x: $year, y: $cumSum},";
+        $totalsumCumArray[$year] = $totalsumCumArray[$year] + $cumSum;
         $idx++;
     }
     $inverterAverage = $cumSum / count($sum_per_year);
@@ -122,6 +118,7 @@ foreach ($inveter_list as $inverter_name) {
                     backgroundColor: customGradientBackground,
                     yAxisID: 'y',
                     isData: true,
+                    legendOrder: " . $inverterCounter . ", 
                 },
     ";
     $cumData = "";
@@ -142,6 +139,7 @@ $allDataSeriesString .= " {
                     fill: false,   
                     showLine: true,
                     isData: false,               
+                    legendOrder: 100, 
                 },
     ";
 
@@ -159,7 +157,8 @@ $allDataSeriesString .= " {
                     yAxisID: 'y',
                     fill: false,   
                     showLine: true,
-                    isData: false,               
+                    isData: false,   
+                    legendOrder: 200,            
                 },
     ";
 
@@ -176,7 +175,8 @@ $allDataSeriesString .= " {
                     pointStyle: false,   
                     yAxisID: 'y1',                       
                     showLine: false,
-                    isData: false,               
+                    isData: false,   
+                    legendOrder: 300,            
                 },
     ";
 
@@ -225,8 +225,8 @@ if ($isIndexPage) {
                     max_kWp = (max / peak).toFixed(2);
                 }
 
-                let out = [txt["sum"] + " " + (totalValue/1000).toFixed(0) + "MWh = " + total_kWp + "kWh/kWp",
-                    txt["max"] + ":" + (max/1000).toFixed(2) + "MWh = " + max_kWp + "kWh/kWp - " + txt["avg"] +" " + (avg/1000).toFixed(2) + "MWh " + txt["ref"] + ": " + (ref/1000).toFixed(2) + "MWh"];
+                let out = [txt["sum"] + " " + (totalValue / 1000).toFixed(0) + "MWh = " + total_kWp + "kWh/kWp",
+                    txt["max"] + ":" + (max / 1000).toFixed(2) + "MWh = " + max_kWp + "kWh/kWp - " + txt["avg"] + " " + (avg / 1000).toFixed(2) + "MWh " + txt["ref"] + ": " + (ref / 1000).toFixed(2) + "MWh"];
 
                 return out;
             }
@@ -290,7 +290,11 @@ if ($isIndexPage) {
                             display: <?= $show_legende ?>,
                             position: 'bottom',
                             labels: {
-                                filter: item => !item.text.includes('line')
+                                filter: item => !item.text.includes('line'),
+                                sort: function (li0, li1, chartData) {
+                                    let chart = chartData;
+                                    return (chart.datasets[li0.datasetIndex].legendOrder - chart.datasets[li1.datasetIndex].legendOrder)
+                                },
                             },
                             onClick: getCustomLegendClickHandler()
                         },

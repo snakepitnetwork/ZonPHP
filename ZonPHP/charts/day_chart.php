@@ -23,6 +23,7 @@ if (isset($_POST['action']) && ($_POST['action'] == "indexpage")) {
 // query for the day-curve
 $utcDateArray = array();
 $allValuesPerInverter = array();
+$dataZonPHP = array();
 
 $sql = "SELECT SUM( Geg_Dag ) AS gem, naam, Datum_Dag" .
     " FROM " . TABLE_PREFIX . "_dag " .
@@ -88,7 +89,6 @@ $labels = convertValueArrayToDataString($utcDateArray);
 // day max line per inverter --------------------------------------------------------------
 $inverterCount = 0;
 $totalsumCumArray = array();
-$dataZonPHP = array();
 $allDataSeriesString = "";
 $plantNames = "";
 foreach (PLANT_NAMES as $key => $inverter_name) {
@@ -125,10 +125,10 @@ foreach (PLANT_NAMES as $key => $inverter_name) {
         $dataZonPHP[$inverter_name]['lastDate'] = convertDateTimeToLocalDateTime(array_key_last($inverterValues), "H:i");
         $dataZonPHP[$inverter_name]['lastValue'] = end($inverterValues);
         $dataZonPHP[$inverter_name]['todayMax'] = max($inverterValues);
-        $dataZonPHP[$inverter_name]['maxDay'] = $nice_max_date;
+    }
 
-        // Day line
-        $allDataSeriesString .= " {
+    // Day line
+    $allDataSeriesString .= " {
                     datasetId: '" . $inverter_name . "', 
                     label: '" . $inverter_name . "', 
                     inverter: '" . $inverter_name . "', 
@@ -158,18 +158,21 @@ foreach (PLANT_NAMES as $key => $inverter_name) {
                 },
         ";
 
-        // max line per inverter
-        $dataSeriesMaxString = "";
-        $inverterMaxDayCumSum = 0;
-        if (isset($allValuesMaxDay[$inverter_name])) {
-            $inverterMaxValues = $allValuesMaxDay[$inverter_name];
-            foreach ($inverterMaxValues as $time => $currentVal) {
-                $dataSeriesMaxString .= '{x:' . ($time * 1000) . ', y:' . $currentVal . '},';
-                $inverterMaxDayCumSum += $currentVal / 12;
-            }
+
+    // max line per inverter
+    $dataSeriesMaxString = "";
+    $inverterMaxDayCumSum = 0;
+    if (isset($allValuesMaxDay[$inverter_name])) {
+
+        $inverterMaxValues = $allValuesMaxDay[$inverter_name];
+        foreach ($inverterMaxValues as $time => $currentVal) {
+            $dataSeriesMaxString .= '{x:' . ($time * 1000) . ', y:' . $currentVal . '},';
+            $inverterMaxDayCumSum += $currentVal / 12;
         }
-        $dataZonPHP[$inverter_name]['maxDayValue'] = $inverterMaxDayCumSum;
-        $allDataSeriesString .= " {
+    }
+    $dataZonPHP[$inverter_name]['maxDay'] = $nice_max_date;
+    $dataZonPHP[$inverter_name]['maxDayValue'] = $inverterMaxDayCumSum;
+    $allDataSeriesString .= " {
                     datasetId: 'max-" . $inverter_name . "', 
                     label: 'max-" . $inverter_name . "', 
                     type: 'line',                               
@@ -189,7 +192,6 @@ foreach (PLANT_NAMES as $key => $inverter_name) {
                     legendOrder: " . $inverterCount + 100 . ",
                 },
         ";
-    }
 }
 
 // cumulative
